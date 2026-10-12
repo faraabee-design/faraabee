@@ -132,6 +132,7 @@ export type PageId =
   | 'journal'
   | 'about-herbal'
   | 'contact'
+  | 'track-order'
   | 'privacy'
   | 'terms'
   | 'admin';

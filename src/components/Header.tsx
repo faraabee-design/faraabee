@@ -35,7 +35,7 @@ export const Header: React.FC<HeaderProps> = ({
     { label: 'About', page: 'about' },
     { label: 'Products', page: 'products' },
     { label: 'Herbal Journal', page: 'journal' },
-    { label: 'About Herbal', page: 'about-herbal' },
+    { label: 'Track Order', page: 'track-order' },
     { label: 'Contact', page: 'contact' },
   ];
 

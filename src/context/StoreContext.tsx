@@ -8,6 +8,7 @@ import {
   deleteField,
   onSnapshot,
   writeBatch,
+  getDocs,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
@@ -77,6 +78,8 @@ interface StoreContextType {
   // Orders
   createOrder: (orderData: Omit<Order, 'id' | 'createdAt'>) => Promise<string>;
   updateOrderStatus: (orderId: string, status: Order['status']) => Promise<void>;
+  deleteOrder: (orderId: string) => Promise<void>;
+  refreshOrders: () => Promise<void>;
   // Image upload
   uploadProductImage: (file: File) => Promise<string>;
 }
@@ -485,6 +488,32 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const deleteOrder = async (orderId: string) => {
+    try {
+      await deleteDoc(doc(db, 'orders', orderId));
+      setOrders((prev) => prev.filter((o) => o.id !== orderId));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `orders/${orderId}`);
+    }
+  };
+
+  const refreshOrders = async () => {
+    try {
+      const snap = await getDocs(collection(db, 'orders'));
+      const loaded: Order[] = [];
+      snap.forEach((docSnap) => {
+        loaded.push({
+          id: docSnap.id,
+          ...docSnap.data(),
+        } as Order);
+      });
+      loaded.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setOrders(loaded);
+    } catch (err) {
+      console.warn('Could not manually fetch orders:', err);
+    }
+  };
+
   // Client-side image compression helper (runs in ~30ms, guarantees 0 hanging)
   const compressImageFile = (file: File): Promise<string> => {
     return new Promise((resolve) => {
@@ -630,6 +659,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         deletePromotion,
         createOrder,
         updateOrderStatus,
+        deleteOrder,
+        refreshOrders,
         uploadProductImage,
       }}
     >

@@ -17,6 +17,7 @@ import { AboutHerbalPage } from './pages/AboutHerbalPage';
 import { ContactPage } from './pages/ContactPage';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 import { TermsPage } from './pages/TermsPage';
+import { TrackOrderPage } from './pages/TrackOrderPage';
 
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminLogin } from './pages/admin/AdminLogin';
@@ -32,6 +33,7 @@ function MainApp() {
   const [currentPage, setCurrentPage] = useState<PageId>('home');
   const [selectedProductSlug, setSelectedProductSlug] = useState<string | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+  const [trackingOrderRef, setTrackingOrderRef] = useState<string>('');
 
   // Cart state with localStorage persistence
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
@@ -73,6 +75,15 @@ function MainApp() {
         return;
       }
 
+      if (hash.startsWith('track-order')) {
+        const orderIdParam = hash.replace('track-order/', '').replace('track-order', '');
+        if (orderIdParam) {
+          setTrackingOrderRef(orderIdParam);
+        }
+        setCurrentPage('track-order');
+        return;
+      }
+
       if (
         [
           'home',
@@ -81,6 +92,7 @@ function MainApp() {
           'journal',
           'about-herbal',
           'contact',
+          'track-order',
           'privacy',
           'terms',
           'admin',
@@ -245,6 +257,13 @@ function MainApp() {
         )}
 
         {currentPage === 'contact' && <ContactPage />}
+
+        {currentPage === 'track-order' && (
+          <TrackOrderPage
+            initialOrderRef={trackingOrderRef}
+            onExploreProducts={() => handleNavigate('products')}
+          />
+        )}
 
         {currentPage === 'privacy' && <PrivacyPolicyPage />}
 

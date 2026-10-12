@@ -62,7 +62,7 @@ service cloud.firestore {
              data.customerPhone is string && data.customerPhone.size() > 0 && data.customerPhone.size() <= 50 &&
              data.shippingAddress is string && data.shippingAddress.size() > 0 && data.shippingAddress.size() <= 500 &&
              data.total is number && data.total >= 0 &&
-             data.status in ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+             data.status in ['pending', 'processing', 'shipped', 'delivered', 'completed', 'cancelled'];
     }
 
     // Products Collection
@@ -92,7 +92,8 @@ service cloud.firestore {
     // Orders Collection
     match /orders/{orderId} {
       allow create: if isValidId(orderId) && isValidOrder(incoming());
-      allow get, list: if isAdmin();
+      allow get: if isValidId(orderId);
+      allow list: if isAdmin();
       allow update: if isAdmin() && isValidId(orderId) && isValidOrder(incoming());
       allow delete: if isAdmin() && isValidId(orderId);
     }

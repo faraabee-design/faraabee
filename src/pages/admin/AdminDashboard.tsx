@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/FirebaseContext';
+import { useStore } from '../../context/StoreContext';
 import { FarabiLogo } from '../../components/FarabiLogo';
 import { AdminOverview } from './AdminOverview';
 import { AdminProducts } from './AdminProducts';
@@ -43,6 +44,7 @@ type TabType =
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, onPreviewProduct }) => {
   const { currentUser, logout } = useAuth();
+  const { orders } = useStore();
   const [activeTab, setActiveTab] = useState<TabType>('products');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -127,14 +129,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, o
                     setActiveTab(item.id);
                     setMobileMenuOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                     isActive
                       ? 'bg-[#183F32] text-white shadow-xs'
                       : 'text-[#26312B]/80 hover:bg-[#E3EBDD]/40 hover:text-[#183F32]'
                   }`}
                 >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  <span>{item.label}</span>
+                  <div className="flex items-center gap-3">
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span>{item.label}</span>
+                  </div>
+                  {item.id === 'orders' && orders.length > 0 && (
+                    <span
+                      className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
+                        isActive ? 'bg-white/20 text-white' : 'bg-[#E3EBDD] text-[#183F32]'
+                      }`}
+                    >
+                      {orders.length}
+                    </span>
+                  )}
                 </button>
               );
             })}

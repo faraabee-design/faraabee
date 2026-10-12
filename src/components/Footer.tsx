@@ -225,6 +225,14 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <ul className="space-y-2.5 text-xs sm:text-sm text-[#FAF9F3]/80">
               <li>
                 <button
+                  onClick={() => handleNav('track-order')}
+                  className="hover:text-white transition-colors cursor-pointer font-medium text-emerald-300"
+                >
+                  Track Your Order
+                </button>
+              </li>
+              <li>
+                <button
                   onClick={() => handleNav('privacy')}
                   className="hover:text-white transition-colors cursor-pointer"
                 >

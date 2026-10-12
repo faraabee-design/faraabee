@@ -143,12 +143,21 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </div>
             </div>
 
-            <div className="pt-4 flex justify-center">
+            <div className="pt-4 flex flex-col sm:flex-row justify-center gap-3">
               <button
-                onClick={onClose}
+                onClick={() => {
+                  window.location.hash = `track-order/${orderRef}`;
+                  onClose();
+                }}
                 className="px-6 py-2.5 bg-[#183F32] text-white text-xs font-semibold uppercase tracking-wider rounded-lg hover:bg-[#285844] transition-colors cursor-pointer"
               >
-                Return to Herbal Store
+                Track This Order Live
+              </button>
+              <button
+                onClick={onClose}
+                className="px-6 py-2.5 bg-[#FAF9F3] text-[#183F32] border border-[#AFC7A5]/50 text-xs font-semibold uppercase tracking-wider rounded-lg hover:bg-[#E8F1DF] transition-colors cursor-pointer"
+              >
+                Return to Store
               </button>
             </div>
           </div>
