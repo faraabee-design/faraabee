@@ -28,6 +28,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [orderSubmitted, setOrderSubmitted] = useState(false);
   const [orderRef, setOrderRef] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -42,48 +43,72 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    setSubmitError(null);
 
     const orderItems = items.map((i) => ({
       productId: i.product.id,
       name: i.product.name,
       price: i.product.salePrice && i.product.salePrice < i.product.price ? i.product.salePrice : i.product.price,
       quantity: i.quantity,
-      image: i.product.image,
+      image: i.product.image || '',
     }));
 
     try {
-      // Save order to Firestore
+      // Save order to Firestore with strictly sanitized fields
       const newOrderId = await createOrder({
         customerName: name.trim(),
         customerPhone: phone.trim(),
-        customerEmail: email.trim() || undefined,
+        customerEmail: email.trim(),
         shippingAddress: address.trim(),
         city: city.trim() || 'Pakistan',
-        notes: notes.trim() || undefined,
+        notes: notes.trim(),
         items: orderItems,
         total: grandTotal,
         status: 'pending',
       });
 
-      const ref = newOrderId || `FRB-${Math.floor(100000 + Math.random() * 900000)}`;
-      setOrderRef(ref);
+      if (!newOrderId) {
+        throw new Error('Order could not be saved to server.');
+      }
+
+      setOrderRef(newOrderId);
+
+      // Save order to localStorage so the customer can easily track on their phone
+      try {
+        const raw = localStorage.getItem('faraabee_recent_orders');
+        const recent = raw ? JSON.parse(raw) : [];
+        const updated = [
+          {
+            id: newOrderId,
+            customerName: name.trim(),
+            customerPhone: phone.trim(),
+            total: grandTotal,
+            city: city.trim() || 'Pakistan',
+            createdAt: new Date().toISOString(),
+          },
+          ...recent.filter((r: any) => r.id !== newOrderId),
+        ].slice(0, 10);
+        localStorage.setItem('faraabee_recent_orders', JSON.stringify(updated));
+      } catch (storageErr) {
+        console.warn('Could not cache recent order:', storageErr);
+      }
 
       if (method === 'whatsapp') {
         const itemsList = items
           .map((i) => `• ${i.product.name} (${i.product.volume || '1 Unit'}) x ${i.quantity} = ${siteConfig.currency.symbol} ${(i.product.price * i.quantity).toLocaleString()}`)
           .join('%0A');
-        const message = `Salam FARAABEE Herbal,%0A%0AI would like to place an order:%0A${itemsList}%0A%0ASubtotal: ${siteConfig.currency.symbol} ${subtotal.toLocaleString()}%0AShipping: ${shipping === 0 ? 'Free' : `${siteConfig.currency.symbol} ${shipping}`}%0ATotal: ${siteConfig.currency.symbol} ${grandTotal.toLocaleString()}%0A%0AOrder Ref: ${ref}%0ACustomer Name: ${name}%0APhone: ${phone}%0ACity: ${city}%0AAddress: ${address}%0ANotes: ${notes || 'None'}`;
+        const message = `Salam FARAABEE Herbal,%0A%0AI would like to place an order:%0A${itemsList}%0A%0ASubtotal: ${siteConfig.currency.symbol} ${subtotal.toLocaleString()}%0AShipping: ${shipping === 0 ? 'Free' : `${siteConfig.currency.symbol} ${shipping}`}%0ATotal: ${siteConfig.currency.symbol} ${grandTotal.toLocaleString()}%0A%0AOrder Ref: ${newOrderId}%0ACustomer Name: ${name}%0APhone: ${phone}%0ACity: ${city}%0AAddress: ${address}%0ANotes: ${notes || 'None'}`;
         window.open(`https://wa.me/${siteConfig.contact.whatsappNumber}?text=${message}`, '_blank');
       }
 
       setOrderSubmitted(true);
       onOrderSuccess();
-    } catch (err) {
-      console.warn('Could not persist order to Firestore, proceeding with local confirmation:', err);
-      const ref = `FRB-${Math.floor(100000 + Math.random() * 900000)}`;
-      setOrderRef(ref);
-      setOrderSubmitted(true);
-      onOrderSuccess();
+    } catch (err: unknown) {
+      console.error('Error placing order to Firestore:', err);
+      const msg = err instanceof Error ? err.message : 'Connection error';
+      setSubmitError(
+        'Unable to complete order registration with the live server. Please verify your connection or click below to order directly via WhatsApp.'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -308,6 +333,25 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 />
               </div>
             </div>
+
+            {submitError && (
+              <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 space-y-2">
+                <p className="font-semibold">{submitError}</p>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={`https://wa.me/${siteConfig.contact.whatsappNumber}?text=${encodeURIComponent(
+                      `Salam FARAABEE, I would like to place an order directly for ${name} (${phone}), Address: ${address}, Total: Rs. ${grandTotal}`
+                    )}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#25D366] text-white font-bold rounded-lg text-xs hover:bg-[#128C7E]"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    <span>Send Order via WhatsApp Concierge</span>
+                  </a>
+                </div>
+              </div>
+            )}
 
             {/* Submit Action */}
             <div className="pt-2 flex items-center justify-between">

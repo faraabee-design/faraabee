@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../context/StoreContext';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Order } from '../types';
 import { Search, Package, Truck, CheckCircle, Clock, AlertCircle, Phone, MapPin, Calendar, ExternalLink } from 'lucide-react';
@@ -18,48 +18,76 @@ export const TrackOrderPage: React.FC<TrackOrderPageProps> = ({ initialOrderRef,
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [recentOrders, setRecentOrders] = useState<Array<{ id: string; customerName: string; total: number; createdAt?: string }>>([]);
+
+  // Load recent orders from localStorage on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('faraabee_recent_orders');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          setRecentOrders(parsed);
+        }
+      }
+    } catch {
+      // Ignore local storage parse error
+    }
+  }, []);
 
   // Auto-search if initialOrderRef is passed
   useEffect(() => {
     if (initialOrderRef) {
       setSearchRef(initialOrderRef);
-      fetchOrder(initialOrderRef);
+      setSearched(true);
     }
   }, [initialOrderRef]);
 
-  const fetchOrder = async (refToFind: string) => {
-    const cleanId = refToFind.trim();
-    if (!cleanId) return;
+  // Real-time onSnapshot listener so customer sees status change immediately when Admin updates to Shipped or Delivered!
+  useEffect(() => {
+    const rawId = searchRef.trim();
+    if (!rawId || !searched) return;
+    const cleanId = rawId.toLowerCase().startsWith('frb-') ? rawId.toUpperCase() : rawId;
 
     setLoading(true);
     setError(null);
-    setSearched(true);
 
-    try {
-      const docRef = doc(db, 'orders', cleanId);
-      const snap = await getDoc(docRef);
-
-      if (snap.exists()) {
-        setOrder({
-          id: snap.id,
-          ...snap.data(),
-        } as Order);
-      } else {
-        setOrder(null);
-        setError(`No order found matching reference "${cleanId}". Please check the ID and try again.`);
+    const docRef = doc(db, 'orders', cleanId);
+    const unsubscribe = onSnapshot(
+      docRef,
+      (snap) => {
+        setLoading(false);
+        if (snap.exists()) {
+          setOrder({
+            id: snap.id,
+            ...snap.data(),
+          } as Order);
+          setError(null);
+        } else {
+          setOrder(null);
+          setError(`No order found matching reference "${cleanId}". Please check the ID or contact customer care.`);
+        }
+      },
+      (err) => {
+        setLoading(false);
+        console.warn('Could not listen to order updates:', err);
+        setError('Could not retrieve live order status. Please check your internet connection.');
       }
-    } catch (err: unknown) {
-      console.warn('Could not query order:', err);
-      setOrder(null);
-      setError('Could not retrieve order details. Please verify your internet connection or reach out on WhatsApp.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    );
+
+    return () => unsubscribe();
+  }, [searchRef, searched]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchOrder(searchRef);
+    if (searchRef.trim()) {
+      setSearched(true);
+    }
+  };
+
+  const handleSelectRecent = (refId: string) => {
+    setSearchRef(refId);
+    setSearched(true);
   };
 
   const getStepActiveIndex = (status: Order['status']) => {
@@ -106,7 +134,7 @@ export const TrackOrderPage: React.FC<TrackOrderPageProps> = ({ initialOrderRef,
         </div>
 
         {/* Search Bar */}
-        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-[#AFC7A5]/40 shadow-sm">
+        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-[#AFC7A5]/40 shadow-sm space-y-4">
           <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="w-5 h-5 text-[#26312B]/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -114,7 +142,7 @@ export const TrackOrderPage: React.FC<TrackOrderPageProps> = ({ initialOrderRef,
                 type="text"
                 value={searchRef}
                 onChange={(e) => setSearchRef(e.target.value)}
-                placeholder="Enter Order ID (e.g. order-xxxxxx or FRB-xxxxxx)"
+                placeholder="Enter Order ID (e.g. FRB-xxxxxx)"
                 className="w-full pl-11 pr-4 py-3 text-sm border border-[#AFC7A5]/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-[#FAF9F3]/40"
               />
             </div>
@@ -126,7 +154,49 @@ export const TrackOrderPage: React.FC<TrackOrderPageProps> = ({ initialOrderRef,
               {loading ? 'Searching...' : 'Track Order'}
             </button>
           </form>
+
+          {/* Quick Select from Orders Placed on This Device */}
+          {recentOrders.length > 0 && (
+            <div className="pt-2 border-t border-[#AFC7A5]/20">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#26312B]/60 block mb-2">
+                Orders Placed On This Device:
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {recentOrders.map((rec) => (
+                  <button
+                    key={rec.id}
+                    type="button"
+                    onClick={() => handleSelectRecent(rec.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs border transition-colors cursor-pointer flex items-center gap-2 ${
+                      searchRef.trim() === rec.id
+                        ? 'bg-[#183F32] text-white border-[#183F32]'
+                        : 'bg-[#FAF9F3] text-[#183F32] border-[#AFC7A5]/40 hover:bg-[#E8F1DF]'
+                    }`}
+                  >
+                    <span className="font-mono font-bold">{rec.id}</span>
+                    <span className="opacity-70 text-[10px]">({rec.customerName})</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Live Tracking Status Banner */}
+        {order && (
+          <div className="px-4 py-2 bg-emerald-50/80 border border-emerald-200/60 rounded-xl flex items-center justify-between text-xs text-emerald-800">
+            <span className="flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600"></span>
+              </span>
+              <span>Live Tracking Active — Status updates automatically when dispatched</span>
+            </span>
+            <span className="text-[11px] text-emerald-700 font-medium hidden sm:inline">
+              Real-time sync
+            </span>
+          </div>
+        )}
 
         {/* Error Notification */}
         {error && (

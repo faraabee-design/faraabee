@@ -466,23 +466,48 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Orders CRUD
   const createOrder = async (orderData: Omit<Order, 'id' | 'createdAt'>): Promise<string> => {
-    const id = `order-${Date.now().toString(36)}-${Math.floor(100 + Math.random() * 900)}`;
+    const id = `FRB-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
+    const sanitizedItems = (orderData.items || []).map((item) => ({
+      productId: String(item.productId || ''),
+      name: String(item.name || 'Herbal Product'),
+      price: Number(item.price) || 0,
+      quantity: Number(item.quantity) || 1,
+      image: item.image ? String(item.image) : '',
+    }));
+
     const fullOrder: Order = {
-      ...orderData,
       id,
       createdAt: new Date().toISOString(),
+      customerName: String(orderData.customerName || '').trim(),
+      customerPhone: String(orderData.customerPhone || '').trim(),
+      customerEmail: orderData.customerEmail ? String(orderData.customerEmail).trim() : '',
+      shippingAddress: String(orderData.shippingAddress || '').trim(),
+      city: String(orderData.city || 'Pakistan').trim(),
+      notes: orderData.notes ? String(orderData.notes).trim() : '',
+      items: sanitizedItems,
+      total: Number(orderData.total) || 0,
+      status: orderData.status || 'pending',
     };
+
+    const cleanPayload = cleanForCreate(fullOrder);
+
     try {
-      await setDoc(doc(db, 'orders', id), fullOrder);
+      await setDoc(doc(db, 'orders', id), cleanPayload);
+      setOrders((prev) => [fullOrder, ...prev.filter((o) => o.id !== id)]);
       return id;
     } catch (err) {
+      console.error('Firestore createOrder failure:', err);
       handleFirestoreError(err, OperationType.CREATE, `orders/${id}`);
+      throw err;
     }
   };
 
   const updateOrderStatus = async (orderId: string, status: Order['status']) => {
     try {
       await updateDoc(doc(db, 'orders', orderId), { status });
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, status } : o))
+      );
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `orders/${orderId}`);
     }

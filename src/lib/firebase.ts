@@ -11,6 +11,7 @@ let firestoreInstance;
 try {
   firestoreInstance = initializeFirestore(app, {
     experimentalAutoDetectLongPolling: true,
+    ignoreUndefinedProperties: true,
   }, firebaseConfig.firestoreDatabaseId);
 } catch {
   firestoreInstance = getFirestore(app, firebaseConfig.firestoreDatabaseId);
