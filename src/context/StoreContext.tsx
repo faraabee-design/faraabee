@@ -13,8 +13,9 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
 import { handleFirestoreError, OperationType } from '../lib/firestoreErrors';
-import { Product, Category, Promotion, Order, SocialLinks, StoreSettings } from '../types';
+import { Product, Category, Promotion, Order, SocialLinks, StoreSettings, SpiritualPost, SpiritualSettings } from '../types';
 import { products as fallbackProducts } from '../data/products';
+import { fallbackSpiritualPosts, fallbackSpiritualSettings } from '../data/spiritual';
 import { siteConfig } from '../config/siteConfig';
 import { useAuth } from './FirebaseContext';
 
@@ -53,6 +54,8 @@ interface StoreContextType {
   categories: Category[];
   promotions: Promotion[];
   orders: Order[];
+  spiritualPosts: SpiritualPost[];
+  spiritualSettings: SpiritualSettings;
   loading: boolean;
   featuredProducts: Product[];
   activePromotion: Promotion | null;
@@ -80,6 +83,11 @@ interface StoreContextType {
   updateOrderStatus: (orderId: string, status: Order['status']) => Promise<void>;
   deleteOrder: (orderId: string) => Promise<void>;
   refreshOrders: () => Promise<void>;
+  // Spiritual Sanctuary CRUD
+  addSpiritualPost: (data: Partial<SpiritualPost>) => Promise<string>;
+  updateSpiritualPost: (id: string, updates: Partial<SpiritualPost>) => Promise<void>;
+  deleteSpiritualPost: (id: string) => Promise<void>;
+  updateSpiritualSettings: (settings: Partial<SpiritualSettings>) => Promise<void>;
   // Image upload
   uploadProductImage: (file: File) => Promise<string>;
 }
@@ -100,6 +108,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [categories, setCategories] = useState<Category[]>([]);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [spiritualPosts, setSpiritualPosts] = useState<SpiritualPost[]>(fallbackSpiritualPosts);
+  const [spiritualSettings, setSpiritualSettings] = useState<SpiritualSettings>(fallbackSpiritualSettings);
   const [socialLinks, setSocialLinks] = useState<SocialLinks>(siteConfig.social);
   const [contactInfo, setContactInfo] = useState<typeof siteConfig.contact>(siteConfig.contact);
   const [loading, setLoading] = useState(true);
@@ -240,7 +250,60 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, []);
 
+  // 6. Subscribe to Spiritual Posts and Settings
+  useEffect(() => {
+    const unsubSpiritual = onSnapshot(
+      collection(db, 'spiritual'),
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const loaded: SpiritualPost[] = [];
+          snapshot.forEach((docSnap) => {
+            loaded.push({
+              id: docSnap.id,
+              ...docSnap.data(),
+            } as SpiritualPost);
+          });
+          loaded.sort((a, b) => (a.displayOrder ?? 99) - (b.displayOrder ?? 99));
+          setSpiritualPosts(loaded);
+        } else if (isAdmin) {
+          seedInitialSpiritual();
+        }
+      },
+      (err) => console.warn('Could not read spiritual posts:', err.message)
+    );
+
+    const unsubSettings = onSnapshot(
+      doc(db, 'settings', 'spiritual'),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          setSpiritualSettings((prev) => ({ ...prev, ...(docSnap.data() as SpiritualSettings) }));
+        }
+      },
+      (err) => console.warn('Could not read spiritual settings:', err.message)
+    );
+
+    return () => {
+      unsubSpiritual();
+      unsubSettings();
+    };
+  }, [isAdmin]);
+
   // Seeding helpers
+  const seedInitialSpiritual = async () => {
+    try {
+      const batch = writeBatch(db);
+      for (const sp of fallbackSpiritualPosts) {
+        const docRef = doc(db, 'spiritual', sp.id);
+        batch.set(docRef, sp);
+      }
+      const settingsRef = doc(db, 'settings', 'spiritual');
+      batch.set(settingsRef, fallbackSpiritualSettings);
+      await batch.commit();
+    } catch {
+      // Ignore if unauthenticated
+    }
+  };
+
   const seedInitialProducts = async () => {
     try {
       const batch = writeBatch(db);
@@ -656,6 +719,79 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  // Spiritual Sanctuary CRUD
+  const addSpiritualPost = async (data: Partial<SpiritualPost>): Promise<string> => {
+    const slug = (data.title || 'spiritual-post')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
+    const id = `spiritual-${slug}-${Date.now().toString(36)}`;
+    const fullPost: SpiritualPost = {
+      id,
+      title: data.title || 'Spiritual Wisdom',
+      subtitle: data.subtitle || '',
+      category: data.category || 'Prophetic Botanicals',
+      image: data.image || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=1200&q=80',
+      arabicQuote: data.arabicQuote || '',
+      quoteTranslation: data.quoteTranslation || '',
+      description: data.description || '',
+      contactPrompt: data.contactPrompt || 'Consult on Spiritual Formulations',
+      relatedProductSlug: data.relatedProductSlug || '',
+      featured: Boolean(data.featured),
+      active: data.active ?? true,
+      displayOrder: Number(data.displayOrder) || spiritualPosts.length + 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    try {
+      const clean = cleanForCreate(fullPost);
+      await setDoc(doc(db, 'spiritual', id), clean);
+      setSpiritualPosts((prev) => [...prev, fullPost]);
+      return id;
+    } catch (err) {
+      handleFirestoreError(err, OperationType.CREATE, `spiritual/${id}`);
+      throw err;
+    }
+  };
+
+  const updateSpiritualPost = async (id: string, updates: Partial<SpiritualPost>) => {
+    try {
+      const clean = cleanForCreate({
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      });
+      await setDoc(doc(db, 'spiritual', id), clean, { merge: true });
+      setSpiritualPosts((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
+      );
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `spiritual/${id}`);
+      throw err;
+    }
+  };
+
+  const deleteSpiritualPost = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'spiritual', id));
+      setSpiritualPosts((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `spiritual/${id}`);
+      throw err;
+    }
+  };
+
+  const updateSpiritualSettings = async (settings: Partial<SpiritualSettings>) => {
+    const merged = { ...spiritualSettings, ...settings, updatedAt: new Date().toISOString() };
+    setSpiritualSettings(merged);
+    try {
+      const clean = cleanForCreate(merged);
+      await setDoc(doc(db, 'settings', 'spiritual'), clean, { merge: true });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'settings/spiritual');
+      throw err;
+    }
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -663,6 +799,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         categories: categories.length > 0 ? categories : (DEFAULT_CATEGORIES as Category[]),
         promotions,
         orders,
+        spiritualPosts,
+        spiritualSettings,
         loading,
         featuredProducts,
         activePromotion,
@@ -686,6 +824,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateOrderStatus,
         deleteOrder,
         refreshOrders,
+        addSpiritualPost,
+        updateSpiritualPost,
+        deleteSpiritualPost,
+        updateSpiritualSettings,
         uploadProductImage,
       }}
     >

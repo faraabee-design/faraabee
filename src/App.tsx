@@ -18,6 +18,7 @@ import { ContactPage } from './pages/ContactPage';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
 import { TermsPage } from './pages/TermsPage';
 import { TrackOrderPage } from './pages/TrackOrderPage';
+import { SpiritualPage } from './pages/SpiritualPage';
 
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminLogin } from './pages/admin/AdminLogin';
@@ -91,6 +92,7 @@ function MainApp() {
           'products',
           'journal',
           'about-herbal',
+          'spiritual',
           'contact',
           'track-order',
           'privacy',
@@ -253,6 +255,13 @@ function MainApp() {
           <AboutHerbalPage
             onExploreProducts={() => handleNavigate('products')}
             onContactClick={() => handleNavigate('contact')}
+          />
+        )}
+
+        {currentPage === 'spiritual' && (
+          <SpiritualPage
+            onExploreProducts={() => handleNavigate('products')}
+            onNavigateProduct={(slug) => handleNavigate('product-detail', slug)}
           />
         )}
 

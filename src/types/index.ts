@@ -124,6 +124,35 @@ export interface StoreSettings {
   updatedAt?: string;
 }
 
+export interface SpiritualPost {
+  id: string;
+  title: string;
+  subtitle?: string;
+  category?: string;
+  image: string;
+  arabicQuote?: string;
+  quoteTranslation?: string;
+  description: string;
+  contactPrompt?: string;
+  relatedProductSlug?: string;
+  featured?: boolean;
+  active: boolean;
+  displayOrder?: number;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface SpiritualSettings {
+  badge: string;
+  title: string;
+  subtitle: string;
+  headerQuote: string;
+  headerQuoteTranslation: string;
+  contactButtonText: string;
+  consultationText: string;
+  updatedAt?: string;
+}
+
 export type PageId =
   | 'home'
   | 'about'
@@ -131,6 +160,7 @@ export type PageId =
   | 'product-detail'
   | 'journal'
   | 'about-herbal'
+  | 'spiritual'
   | 'contact'
   | 'track-order'
   | 'privacy'

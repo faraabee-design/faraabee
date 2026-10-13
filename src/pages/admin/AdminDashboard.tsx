@@ -10,6 +10,7 @@ import { AdminOrders } from './AdminOrders';
 import { AdminSocialsSettings } from './AdminSocialsSettings';
 import { AdminThemeCustomizer } from './AdminThemeCustomizer';
 import { AdminContentEditor } from './AdminContentEditor';
+import { AdminSpiritual } from './AdminSpiritual';
 import {
   LayoutDashboard,
   Package,
@@ -24,6 +25,7 @@ import {
   Share2,
   Palette,
   FileText,
+  Sparkles,
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -35,6 +37,7 @@ type TabType =
   | 'overview'
   | 'products'
   | 'categories'
+  | 'spiritual'
   | 'theme'
   | 'content'
   | 'promotions'
@@ -65,6 +68,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, o
     { id: 'overview' as TabType, label: 'Overview', icon: LayoutDashboard },
     { id: 'products' as TabType, label: 'Products', icon: Package },
     { id: 'categories' as TabType, label: 'Categories', icon: Layers },
+    { id: 'spiritual' as TabType, label: 'Spiritual Sanctuary', icon: Sparkles },
     { id: 'theme' as TabType, label: 'Colors & Styling', icon: Palette },
     { id: 'content' as TabType, label: 'Live Text & Copy', icon: FileText },
     { id: 'promotions' as TabType, label: 'Promotions', icon: Tag },
@@ -234,6 +238,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, o
 
         {activeTab === 'categories' && (
           <AdminCategories onNotify={showNotification} />
+        )}
+
+        {activeTab === 'spiritual' && (
+          <AdminSpiritual onNotify={showNotification} />
         )}
 
         {activeTab === 'theme' && (

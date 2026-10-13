@@ -64,6 +64,7 @@ export const HomePage: React.FC<HomePageProps> = ({
       <CallToAction
         onExploreClick={() => onNavigate('products')}
         onContactClick={() => onNavigate('contact')}
+        onSpiritualClick={() => onNavigate('spiritual')}
       />
     </div>
   );

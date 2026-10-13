@@ -4,11 +4,13 @@ import { ArrowRight, MessageSquare, Sparkles } from 'lucide-react';
 interface CallToActionProps {
   onExploreClick: () => void;
   onContactClick: () => void;
+  onSpiritualClick?: () => void;
 }
 
 export const CallToAction: React.FC<CallToActionProps> = ({
   onExploreClick,
   onContactClick,
+  onSpiritualClick,
 }) => {
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-[#E8F1DF] via-[#FAF9F3] to-[#E8F1DF]/70 py-20 sm:py-24 border-b border-[#AFC7A5]/30">
@@ -51,6 +53,21 @@ export const CallToAction: React.FC<CallToActionProps> = ({
         <p className="font-urdu text-sm text-[#285844] mt-8" dir="rtl">
           قدرت کی حکمت، آپ کی روزمرہ صحت کے لیے
         </p>
+
+        {/* Button just down the Urdu line in website signature green */}
+        <div className="mt-6 flex flex-col items-center justify-center">
+          <button
+            onClick={onSpiritualClick}
+            className="group inline-flex items-center justify-center gap-2.5 px-8 py-3.5 text-xs font-semibold uppercase tracking-wider text-white bg-[#183F32] hover:bg-[#285844] rounded-xl shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer border border-[#AFC7A5]/40 hover:scale-102 ring-2 ring-[#183F32]/10"
+          >
+            <Sparkles className="w-4 h-4 text-[#B79A5B] transition-transform group-hover:rotate-12" />
+            <span>Explore Our Spiritual Sanctuary</span>
+            <ArrowRight className="w-4 h-4 text-[#AFC7A5] transition-transform group-hover:translate-x-1" />
+          </button>
+          <span className="text-[11px] text-[#285844]/80 mt-2 font-urdu" dir="rtl">
+            روحانی شفا، نبوی نباتات اور دلی سکون کی رہنمائی
+          </span>
+        </div>
       </div>
     </section>
   );

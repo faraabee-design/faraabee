@@ -200,6 +200,14 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               </li>
               <li>
                 <button
+                  onClick={() => handleNav('spiritual')}
+                  className="hover:text-white transition-colors cursor-pointer text-[#AFC7A5] font-medium"
+                >
+                  Spiritual Sanctuary
+                </button>
+              </li>
+              <li>
+                <button
                   onClick={() => handleNav('about-herbal')}
                   className="hover:text-white transition-colors cursor-pointer"
                 >
