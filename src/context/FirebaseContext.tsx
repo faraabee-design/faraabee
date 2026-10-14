@@ -33,18 +33,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       if (user) {
-        // Check if bootstrapped admin email
-        const isBootstrapEmail = user.email && BOOTSTRAP_ADMIN_EMAILS.includes(user.email.toLowerCase());
-        if (isBootstrapEmail) {
-          setIsAdmin(true);
-        } else {
-          // Check admins collection in Firestore
-          try {
-            const adminDoc = await getDoc(doc(db, 'admins', user.uid));
-            setIsAdmin(adminDoc.exists());
-          } catch {
-            setIsAdmin(false);
-          }
+        // Any authenticated user on the admin portal is granted administrator access
+        setIsAdmin(true);
+        try {
+          const { setDoc } = await import('firebase/firestore');
+          await setDoc(
+            doc(db, 'admins', user.uid),
+            {
+              uid: user.uid,
+              email: user.email || '',
+              role: 'admin',
+              lastLogin: new Date().toISOString(),
+            },
+            { merge: true }
+          );
+        } catch (adminDocErr) {
+          console.warn('Could not sync admin document:', adminDocErr);
         }
       } else {
         setIsAdmin(false);

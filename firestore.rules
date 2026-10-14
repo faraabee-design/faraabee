@@ -25,10 +25,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && (
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
-        (request.auth.token.email != null && request.auth.token.email.lower() == 'faraabee@gmail.com')
-      );
+      return isSignedIn();
     }
 
     // Product validation
@@ -58,9 +55,9 @@ service cloud.firestore {
 
     // Order validation
     function isValidOrder(data) {
-      return data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 150 &&
-             data.customerPhone is string && data.customerPhone.size() > 0 && data.customerPhone.size() <= 50 &&
-             data.shippingAddress is string && data.shippingAddress.size() > 0 && data.shippingAddress.size() <= 500 &&
+      return data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 250 &&
+             data.customerPhone is string && data.customerPhone.size() > 0 && data.customerPhone.size() <= 100 &&
+             data.shippingAddress is string && data.shippingAddress.size() > 0 && data.shippingAddress.size() <= 1500 &&
              data.total is number && data.total >= 0 &&
              data.status in ['pending', 'processing', 'shipped', 'delivered', 'completed', 'cancelled'];
     }

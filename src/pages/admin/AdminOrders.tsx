@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { Order } from '../../types';
 import {
@@ -30,6 +30,11 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({ onNotify }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [orderToClose, setOrderToClose] = useState<Order | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Synchronize on mount to ensure phone-placed orders appear immediately on desktop
+  useEffect(() => {
+    refreshOrders().catch((err) => console.warn('Could not sync orders on mount:', err));
+  }, []);
 
   const handleRefresh = async () => {
     setRefreshing(true);

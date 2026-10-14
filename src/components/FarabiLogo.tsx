@@ -3,25 +3,29 @@ import React from 'react';
 interface FarabiLogoProps {
   variant?: 'dark' | 'light';
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  height?: number;
   className?: string;
 }
 
 export const FarabiLogo: React.FC<FarabiLogoProps> = ({
   variant = 'dark',
   size = 'md',
+  height,
   className = '',
 }) => {
   const isLight = variant === 'light';
   const logoSrc = isLight ? '/images/faraabee_logo_light.svg' : '/images/faraabee_logo.svg';
 
-  // Restored to exact original dimensions:
+  // Standard dimensions:
   // sm: 42px, md: 56px, lg: 88px, xl: 120px
-  const dimensions = {
-    sm: { height: 42 },
-    md: { height: 56 },
-    lg: { height: 88 },
-    xl: { height: 120 },
+  const defaultHeight = {
+    sm: 42,
+    md: 56,
+    lg: 88,
+    xl: 120,
   }[size];
+
+  const actualHeight = height ?? defaultHeight;
 
   return (
     <div
@@ -31,7 +35,7 @@ export const FarabiLogo: React.FC<FarabiLogoProps> = ({
       <img
         src={logoSrc}
         alt="FARAABEE Logo"
-        style={{ height: dimensions.height, width: 'auto' }}
+        style={{ height: actualHeight, width: 'auto' }}
         className="object-contain transition-transform"
         loading="eager"
         decoding="async"

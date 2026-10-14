@@ -30,6 +30,7 @@ export const HomePage: React.FC<HomePageProps> = ({
       <Hero
         onExploreClick={() => onNavigate('products')}
         onAboutClick={() => onNavigate('about')}
+        onSpiritualClick={() => onNavigate('spiritual')}
       />
 
       <TrustStrip />

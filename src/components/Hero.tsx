@@ -6,9 +6,10 @@ import { useCustomization, DynamicText } from '../context/CustomizationContext';
 interface HeroProps {
   onExploreClick: () => void;
   onAboutClick: () => void;
+  onSpiritualClick?: () => void;
 }
 
-export const Hero: React.FC<HeroProps> = ({ onExploreClick, onAboutClick }) => {
+export const Hero: React.FC<HeroProps> = ({ onExploreClick, onAboutClick, onSpiritualClick }) => {
   const { theme } = useCustomization();
 
   return (
@@ -74,6 +75,16 @@ export const Hero: React.FC<HeroProps> = ({ onExploreClick, onAboutClick }) => {
               >
                 <DynamicText id="heroBtnSecondary" />
               </button>
+
+              {onSpiritualClick && (
+                <button
+                  onClick={onSpiritualClick}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold tracking-wide uppercase bg-[#183F32] hover:bg-[#285844] text-white rounded-xl shadow-xs hover:shadow transition-all duration-200 cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4 text-[#B79A5B]" />
+                  <span>Spiritual Sanctuary</span>
+                </button>
+              )}
             </div>
 
             {/* Trust highlights bar */}

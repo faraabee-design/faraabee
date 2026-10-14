@@ -61,7 +61,7 @@ export const CallToAction: React.FC<CallToActionProps> = ({
             className="group inline-flex items-center justify-center gap-2.5 px-8 py-3.5 text-xs font-semibold uppercase tracking-wider text-white bg-[#183F32] hover:bg-[#285844] rounded-xl shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer border border-[#AFC7A5]/40 hover:scale-102 ring-2 ring-[#183F32]/10"
           >
             <Sparkles className="w-4 h-4 text-[#B79A5B] transition-transform group-hover:rotate-12" />
-            <span>Explore Our Spiritual Sanctuary</span>
+            <span>Explore Our Spiritual Page Too</span>
             <ArrowRight className="w-4 h-4 text-[#AFC7A5] transition-transform group-hover:translate-x-1" />
           </button>
           <span className="text-[11px] text-[#285844]/80 mt-2 font-urdu" dir="rtl">
