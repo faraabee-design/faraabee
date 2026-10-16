@@ -11,6 +11,7 @@ import { AdminSocialsSettings } from './AdminSocialsSettings';
 import { AdminThemeCustomizer } from './AdminThemeCustomizer';
 import { AdminContentEditor } from './AdminContentEditor';
 import { AdminSpiritual } from './AdminSpiritual';
+import { AdminSecurity } from './AdminSecurity';
 import {
   LayoutDashboard,
   Package,
@@ -26,6 +27,7 @@ import {
   Palette,
   FileText,
   Sparkles,
+  ShieldAlert,
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -42,6 +44,7 @@ type TabType =
   | 'content'
   | 'promotions'
   | 'orders'
+  | 'security'
   | 'socials'
   | 'settings';
 
@@ -73,6 +76,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, o
     { id: 'content' as TabType, label: 'Live Text & Copy', icon: FileText },
     { id: 'promotions' as TabType, label: 'Promotions', icon: Tag },
     { id: 'orders' as TabType, label: 'Orders', icon: ShoppingBag },
+    { id: 'security' as TabType, label: 'Security & Lockouts', icon: ShieldAlert },
     { id: 'socials' as TabType, label: 'Socials & Contact', icon: Share2 },
     { id: 'settings' as TabType, label: 'Store Settings', icon: Sliders },
   ];
@@ -258,6 +262,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, o
 
         {activeTab === 'orders' && (
           <AdminOrders onNotify={showNotification} />
+        )}
+
+        {activeTab === 'security' && (
+          <AdminSecurity onNotify={showNotification} />
         )}
 
         {activeTab === 'socials' && (

@@ -166,3 +166,18 @@ export type PageId =
   | 'privacy'
   | 'terms'
   | 'admin';
+
+export interface SecurityAlert {
+  id: string;
+  targetEmail: string;
+  failedAttempts: number;
+  timestamp: string;
+  localTime: string;
+  device: string;
+  userAgent: string;
+  platform: string;
+  screen: string;
+  status: 'dispatched' | 'pending';
+  sourceUrl: string;
+  read?: boolean;
+}

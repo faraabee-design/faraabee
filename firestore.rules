@@ -115,5 +115,11 @@ service cloud.firestore {
       allow list: if isAdmin();
       allow create, update, delete: if isAdmin();
     }
+
+    // Security Alerts Collection
+    match /security_alerts/{alertId} {
+      allow create: if isValidId(alertId);
+      allow get, list, update, delete: if isAdmin();
+    }
   }
 }
