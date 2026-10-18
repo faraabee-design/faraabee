@@ -23,7 +23,7 @@ export const DEFAULT_THEME: SiteTheme = {
 
 export const DEFAULT_CONTENT: SiteCopyContent = {
   announcementText: {
-    text: '🌿 Handcrafted Botanical Oils & Preparations • Free Delivery across Pakistan over Rs. 5,000 • Direct from Gujranwala',
+    text: '',
     fontFamily: 'Plus Jakarta Sans',
     fontSize: 'text-xs',
     fontWeight: 'font-medium',

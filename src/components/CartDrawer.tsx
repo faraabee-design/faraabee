@@ -1,6 +1,7 @@
 import React from 'react';
 import { CartItem } from '../types';
 import { siteConfig } from '../config/siteConfig';
+import { useStore } from '../context/StoreContext';
 import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, ShieldCheck } from 'lucide-react';
 
 interface CartDrawerProps {
@@ -22,10 +23,29 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onProceedToCheckout,
   onNavigateToProducts,
 }) => {
+  const { deliverySettings, activeCurrency } = useStore();
   if (!isOpen) return null;
 
-  const subtotal = items.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
-  const freeThreshold = siteConfig.currency.freeShippingThreshold;
+  const isUSD = activeCurrency === 'USD';
+  const currencySymbol = isUSD ? '$' : 'Rs.';
+
+  const freeThreshold = isUSD
+    ? (deliverySettings.freeShippingThresholdUSD || 50)
+    : (deliverySettings.freeShippingThreshold || 5000);
+
+  const standardShippingFee = isUSD
+    ? (deliverySettings.standardShippingFeeUSD ?? 10)
+    : (deliverySettings.standardShippingFee ?? 250);
+
+  const subtotal = items.reduce((acc, item) => {
+    const itemPrice = isUSD
+      ? (item.product.priceUSD ?? (item.product.price ? Math.round(item.product.price / 280) : 0))
+      : (item.product.salePrice && item.product.salePrice < item.product.price ? item.product.salePrice : item.product.price);
+    return acc + itemPrice * item.quantity;
+  }, 0);
+
+  const isFreeDelivery = deliverySettings.freeShippingEnabled && (standardShippingFee === 0 || subtotal >= freeThreshold);
+  const effectiveShipping = isFreeDelivery ? 0 : standardShippingFee;
   const progressPercent = Math.min(100, Math.round((subtotal / freeThreshold) * 100));
   const amountNeededForFree = Math.max(0, freeThreshold - subtotal);
 
@@ -63,7 +83,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           <div className="px-5 py-3.5 bg-[#E8F1DF]/60 border-b border-[#AFC7A5]/30 text-xs">
             {amountNeededForFree > 0 ? (
               <p className="text-[#183F32] mb-1.5 font-medium">
-                Add <span className="font-bold">{siteConfig.currency.symbol} {amountNeededForFree.toLocaleString()}</span> more for <span className="font-bold">Free Shipping</span> in Pakistan.
+                Add <span className="font-bold">{currencySymbol} {amountNeededForFree.toLocaleString()}</span> more for <span className="font-bold">Free Shipping</span>.
               </p>
             ) : (
               <p className="text-[#183F32] mb-1.5 font-bold flex items-center gap-1.5">
@@ -168,27 +188,23 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 <div className="flex justify-between text-[#26312B]/80">
                   <span>Subtotal</span>
                   <span className="font-medium tabular-nums">
-                    {siteConfig.currency.symbol} {subtotal.toLocaleString()}
+                    {currencySymbol} {subtotal.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between text-[#26312B]/80">
                   <span>Estimated Delivery</span>
                   <span className="font-medium tabular-nums">
-                    {subtotal >= freeThreshold ? (
-                      <span className="text-emerald-700 font-semibold">Free</span>
+                    {effectiveShipping === 0 ? (
+                      <span className="text-emerald-700 font-semibold">Free Delivery</span>
                     ) : (
-                      `${siteConfig.currency.symbol} ${siteConfig.currency.standardShippingFee}`
+                      `${currencySymbol} ${effectiveShipping.toLocaleString()}`
                     )}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm font-bold text-[#183F32] pt-2 border-t border-[#AFC7A5]/30">
                   <span>Total</span>
                   <span className="tabular-nums">
-                    {siteConfig.currency.symbol}{' '}
-                    {(
-                      subtotal +
-                      (subtotal >= freeThreshold ? 0 : siteConfig.currency.standardShippingFee)
-                    ).toLocaleString()}
+                    {currencySymbol} {(subtotal + effectiveShipping).toLocaleString()}
                   </span>
                 </div>
               </div>

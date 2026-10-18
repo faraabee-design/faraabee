@@ -49,7 +49,12 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const [category, setCategory] = useState(product?.category || (categories[0]?.name || 'Herbal Oils'));
   const [price, setPrice] = useState<string>(product?.price !== undefined ? String(product.price) : '');
   const [salePrice, setSalePrice] = useState<string>(product?.salePrice !== undefined ? String(product.salePrice) : '');
+  const [priceUSD, setPriceUSD] = useState<string>(product?.priceUSD !== undefined ? String(product.priceUSD) : '');
+  const [salePriceUSD, setSalePriceUSD] = useState<string>(product?.salePriceUSD !== undefined ? String(product.salePriceUSD) : '');
   const [currency, setCurrency] = useState(product?.currency || 'PKR');
+  const [currencyTag, setCurrencyTag] = useState<'PKR' | 'USD' | 'DUAL'>(
+    product?.currency === 'USD' ? 'USD' : product?.priceUSD ? 'DUAL' : 'PKR'
+  );
   const [volume, setVolume] = useState(product?.volume || '100 ml');
   const [shortDescription, setShortDescription] = useState(product?.shortDescription || '');
   const [description, setDescription] = useState(product?.description || '');
@@ -170,7 +175,9 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         category,
         price: Number(price),
         salePrice: salePrice && !isNaN(Number(salePrice)) && Number(salePrice) > 0 ? Number(salePrice) : undefined,
-        currency: currency.trim() || 'PKR',
+        priceUSD: priceUSD && !isNaN(Number(priceUSD)) && Number(priceUSD) > 0 ? Number(priceUSD) : undefined,
+        salePriceUSD: salePriceUSD && !isNaN(Number(salePriceUSD)) && Number(salePriceUSD) > 0 ? Number(salePriceUSD) : undefined,
+        currency: currencyTag === 'USD' ? 'USD' : currencyTag === 'DUAL' ? 'PKR' : (currency.trim() || 'PKR'),
         volume: volume.trim(),
         shortDescription: shortDescription.trim(),
         description: description.trim() || shortDescription.trim(),
@@ -283,118 +290,280 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
             </div>
           </div>
 
-          {/* Section 2: Pricing, Currency & Stock */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-[#FAF9F3] rounded-2xl border border-[#AFC7A5]/25">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#183F32] mb-1">
-                Regular Price *
-              </label>
-              <input
-                type="number"
-                required
-                min="0"
-                step="any"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="1850"
-                className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
-              />
+          {/* Section 2: Pricing & Multi-Currency Options (PKR & USD) */}
+          <div className="p-5 bg-[#FAF9F3] rounded-3xl border border-[#AFC7A5]/35 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#AFC7A5]/25">
+              <div>
+                <span className="block text-xs font-bold uppercase tracking-wider text-[#183F32]">
+                  Pricing & Currency Tagging
+                </span>
+                <p className="text-[11px] text-[#26312B]/70">
+                  Tag this remedy with prices in PKR (Rs.) and USD ($), or both for dual currency.
+                </p>
+              </div>
+
+              {/* Currency Tag Mode Selector */}
+              <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-[#AFC7A5]/40 text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCurrencyTag('PKR');
+                    setCurrency('PKR');
+                  }}
+                  className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                    currencyTag === 'PKR'
+                      ? 'bg-[#183F32] text-white shadow-2xs'
+                      : 'text-[#26312B]/70 hover:text-[#183F32]'
+                  }`}
+                >
+                  🇵🇰 PKR (Rs.)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCurrencyTag('USD');
+                    setCurrency('USD');
+                  }}
+                  className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                    currencyTag === 'USD'
+                      ? 'bg-[#183F32] text-white shadow-2xs'
+                      : 'text-[#26312B]/70 hover:text-[#183F32]'
+                  }`}
+                >
+                  🇺🇸 USD ($)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCurrencyTag('DUAL');
+                    setCurrency('PKR');
+                  }}
+                  className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                    currencyTag === 'DUAL'
+                      ? 'bg-[#183F32] text-white shadow-2xs'
+                      : 'text-[#26312B]/70 hover:text-[#183F32]'
+                  }`}
+                >
+                  🌐 Dual (PKR + USD)
+                </button>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#183F32] mb-1">
-                Sale Price (Optional)
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="any"
-                value={salePrice}
-                onChange={(e) => setSalePrice(e.target.value)}
-                placeholder="1650"
-                className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* PKR Price Tag Module */}
+              <div className="p-3.5 bg-white rounded-2xl border border-[#AFC7A5]/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#183F32] flex items-center gap-1">
+                    <span>🇵🇰 Pakistani Rupee Price (PKR)</span>
+                    <span className="text-red-500">*</span>
+                  </span>
+                  {price && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const num = Number(price);
+                        if (num > 0) {
+                          const usdVal = (num / 280).toFixed(2);
+                          setPriceUSD(usdVal);
+                          if (salePrice && Number(salePrice) > 0) {
+                            setSalePriceUSD((Number(salePrice) / 280).toFixed(2));
+                          }
+                        }
+                      }}
+                      className="text-[10px] text-[#183F32] hover:underline font-semibold bg-[#E8F1DF]/70 px-2 py-0.5 rounded cursor-pointer"
+                      title="Convert PKR to USD at ~280 rate"
+                    >
+                      ⚡ Auto-calc USD ($)
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-[#26312B]/60 mb-1">
+                      Regular Price (PKR)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center text-xs font-bold text-[#183F32]">
+                        Rs.
+                      </span>
+                      <input
+                        type="number"
+                        required
+                        min="0"
+                        step="any"
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                        placeholder="1850"
+                        className="w-full pl-9 pr-2.5 py-2 border border-[#AFC7A5]/40 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-[#26312B]/60 mb-1">
+                      Sale Price (PKR)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center text-xs font-bold text-[#183F32]">
+                        Rs.
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={salePrice}
+                        onChange={(e) => setSalePrice(e.target.value)}
+                        placeholder="1650"
+                        className="w-full pl-9 pr-2.5 py-2 border border-[#AFC7A5]/40 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* USD Price Tag Module */}
+              <div className="p-3.5 bg-white rounded-2xl border border-[#AFC7A5]/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#183F32] flex items-center gap-1">
+                    <span>🇺🇸 US Dollar Price (USD)</span>
+                    <span className="text-[10px] font-normal text-[#26312B]/60">
+                      {currencyTag === 'USD' || currencyTag === 'DUAL' ? '(Active)' : '(Optional)'}
+                    </span>
+                  </span>
+                  {priceUSD && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const num = Number(priceUSD);
+                        if (num > 0) {
+                          setPrice(String(Math.round(num * 280)));
+                          if (salePriceUSD && Number(salePriceUSD) > 0) {
+                            setSalePrice(String(Math.round(Number(salePriceUSD) * 280)));
+                          }
+                        }
+                      }}
+                      className="text-[10px] text-[#183F32] hover:underline font-semibold bg-[#E8F1DF]/70 px-2 py-0.5 rounded cursor-pointer"
+                      title="Convert USD to PKR at ~280 rate"
+                    >
+                      ⚡ Auto-calc PKR (Rs.)
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-[#26312B]/60 mb-1">
+                      Regular Price (USD)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center text-xs font-bold text-[#183F32]">
+                        $
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={priceUSD}
+                        onChange={(e) => setPriceUSD(e.target.value)}
+                        placeholder="12.00"
+                        className="w-full pl-7 pr-2.5 py-2 border border-[#AFC7A5]/40 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-[#26312B]/60 mb-1">
+                      Sale Price (USD)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center text-xs font-bold text-[#183F32]">
+                        $
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={salePriceUSD}
+                        onChange={(e) => setSalePriceUSD(e.target.value)}
+                        placeholder="9.50"
+                        className="w-full pl-7 pr-2.5 py-2 border border-[#AFC7A5]/40 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#183F32] mb-1">
-                Currency
-              </label>
-              <input
-                type="text"
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                placeholder="PKR or Rs."
-                className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
-              />
-            </div>
+            {/* Volume, Stock & SKU row */}
+            <div className="grid grid-cols-3 gap-3 pt-2">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#183F32] mb-1">
+                  Volume / Unit Size
+                </label>
+                <input
+                  type="text"
+                  value={volume}
+                  onChange={(e) => setVolume(e.target.value)}
+                  placeholder="100 ml / 50 g"
+                  className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
+                />
+              </div>
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#183F32] mb-1">
-                Volume / Size
-              </label>
-              <input
-                type="text"
-                value={volume}
-                onChange={(e) => setVolume(e.target.value)}
-                placeholder="100 ml / 50 g"
-                className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
-              />
-            </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#183F32] mb-1">
+                  Stock Units Available
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={stockQuantity}
+                  onChange={(e) => setStockQuantity(e.target.value)}
+                  placeholder="50"
+                  className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
+                />
+              </div>
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#183F32] mb-1">
-                Stock Quantity
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={stockQuantity}
-                onChange={(e) => setStockQuantity(e.target.value)}
-                placeholder="50"
-                className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
-              />
-            </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#183F32] mb-1">
+                  SKU / Internal Code
+                </label>
+                <input
+                  type="text"
+                  value={sku}
+                  onChange={(e) => setSku(e.target.value)}
+                  placeholder="FAR-001"
+                  className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
+                />
+              </div>
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#183F32] mb-1">
-                SKU / Code
-              </label>
-              <input
-                type="text"
-                value={sku}
-                onChange={(e) => setSku(e.target.value)}
-                placeholder="FB-1001"
-                className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
-              />
-            </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#183F32] mb-1">
+                  Display Order
+                </label>
+                <input
+                  type="number"
+                  value={displayOrder}
+                  onChange={(e) => setDisplayOrder(e.target.value)}
+                  placeholder="1"
+                  className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
+                />
+              </div>
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#183F32] mb-1">
-                Display Order
-              </label>
-              <input
-                type="number"
-                value={displayOrder}
-                onChange={(e) => setDisplayOrder(e.target.value)}
-                placeholder="1"
-                className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#183F32] mb-1">
-                Status
-              </label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as Product['status'])}
-                className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white cursor-pointer"
-              >
-                <option value="active">Active (Visible)</option>
-                <option value="draft">Draft (Hidden)</option>
-                <option value="archived">Archived</option>
-              </select>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#183F32] mb-1">
+                  Status
+                </label>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as Product['status'])}
+                  className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white cursor-pointer"
+                >
+                  <option value="active">Active (Visible)</option>
+                  <option value="draft">Draft (Hidden)</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
             </div>
           </div>
 

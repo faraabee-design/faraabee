@@ -17,7 +17,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   items,
   onOrderSuccess,
 }) => {
-  const { createOrder } = useStore();
+  const { createOrder, deliverySettings, activeCurrency } = useStore();
   const [method, setMethod] = useState<'cod' | 'whatsapp' | 'bank'>('cod');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -32,12 +32,27 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   if (!isOpen) return null;
 
+  const isUSD = activeCurrency === 'USD';
+  const currencySymbol = isUSD ? '$' : 'Rs.';
+  const freeThreshold = isUSD
+    ? (deliverySettings.freeShippingThresholdUSD || 50)
+    : (deliverySettings.freeShippingThreshold || 5000);
+  const standardShippingFee = isUSD
+    ? (deliverySettings.standardShippingFeeUSD ?? 10)
+    : (deliverySettings.standardShippingFee ?? 250);
+
   const subtotal = items.reduce(
-    (acc, item) =>
-      acc + (item.product.salePrice && item.product.salePrice < item.product.price ? item.product.salePrice : item.product.price) * item.quantity,
+    (acc, item) => {
+      const itemPrice = isUSD
+        ? (item.product.priceUSD ?? (item.product.price ? Math.round(item.product.price / 280) : 0))
+        : (item.product.salePrice && item.product.salePrice < item.product.price ? item.product.salePrice : item.product.price);
+      return acc + itemPrice * item.quantity;
+    },
     0
   );
-  const shipping = subtotal >= siteConfig.currency.freeShippingThreshold ? 0 : siteConfig.currency.standardShippingFee;
+
+  const isFreeDelivery = deliverySettings.freeShippingEnabled && (standardShippingFee === 0 || subtotal >= freeThreshold);
+  const shipping = isFreeDelivery ? 0 : standardShippingFee;
   const grandTotal = subtotal + shipping;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -95,9 +110,14 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
       if (method === 'whatsapp') {
         const itemsList = items
-          .map((i) => `• ${i.product.name} (${i.product.volume || '1 Unit'}) x ${i.quantity} = ${siteConfig.currency.symbol} ${(i.product.price * i.quantity).toLocaleString()}`)
+          .map((i) => {
+            const itemPrice = isUSD
+              ? (i.product.priceUSD ?? (i.product.price ? Math.round(i.product.price / 280) : 0))
+              : (i.product.salePrice && i.product.salePrice < i.product.price ? i.product.salePrice : i.product.price);
+            return `• ${i.product.name} (${i.product.volume || '1 Unit'}) x ${i.quantity} = ${currencySymbol} ${(itemPrice * i.quantity).toLocaleString()}`;
+          })
           .join('%0A');
-        const message = `Salam FARAABEE Herbal,%0A%0AI would like to place an order:%0A${itemsList}%0A%0ASubtotal: ${siteConfig.currency.symbol} ${subtotal.toLocaleString()}%0AShipping: ${shipping === 0 ? 'Free' : `${siteConfig.currency.symbol} ${shipping}`}%0ATotal: ${siteConfig.currency.symbol} ${grandTotal.toLocaleString()}%0A%0AOrder Ref: ${newOrderId}%0ACustomer Name: ${name}%0APhone: ${phone}%0ACity: ${city}%0AAddress: ${address}%0ANotes: ${notes || 'None'}`;
+        const message = `Salam FARAABEE Herbal,%0A%0AI would like to place an order:%0A${itemsList}%0A%0ASubtotal: ${currencySymbol} ${subtotal.toLocaleString()}%0AShipping: ${shipping === 0 ? 'Free' : `${currencySymbol} ${shipping}`}%0ATotal: ${currencySymbol} ${grandTotal.toLocaleString()}%0A%0AOrder Ref: ${newOrderId}%0ACustomer Name: ${name}%0APhone: ${phone}%0ACity: ${city}%0AAddress: ${address}%0ANotes: ${notes || 'None'}`;
         window.open(`https://wa.me/${siteConfig.contact.whatsappNumber}?text=${message}`, '_blank');
       }
 
@@ -163,7 +183,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <div className="flex justify-between">
                 <span className="text-[#26312B]/60">Total Payable:</span>
                 <span className="font-bold text-[#183F32]">
-                  {siteConfig.currency.symbol} {grandTotal.toLocaleString()}
+                  {currencySymbol} {grandTotal.toLocaleString()}
                 </span>
               </div>
             </div>
@@ -193,15 +213,15 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             <div className="p-4 bg-[#FAF9F3] rounded-xl border border-[#AFC7A5]/30 space-y-2">
               <div className="flex justify-between text-xs text-[#26312B]/75">
                 <span>Selected Formulations ({items.reduce((acc, i) => acc + i.quantity, 0)} items):</span>
-                <span>{siteConfig.currency.symbol} {subtotal.toLocaleString()}</span>
+                <span>{currencySymbol} {subtotal.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-xs text-[#26312B]/75">
                 <span>Domestic Delivery:</span>
-                <span>{shipping === 0 ? <strong className="text-emerald-800">FREE</strong> : `${siteConfig.currency.symbol} ${shipping}`}</span>
+                <span>{shipping === 0 ? <strong className="text-emerald-800">FREE</strong> : `${currencySymbol} ${shipping.toLocaleString()}`}</span>
               </div>
               <div className="pt-2 border-t border-[#AFC7A5]/25 flex justify-between text-sm font-semibold text-[#183F32]">
                 <span>Total Amount:</span>
-                <span>{siteConfig.currency.symbol} {grandTotal.toLocaleString()}</span>
+                <span>{currencySymbol} {grandTotal.toLocaleString()}</span>
               </div>
             </div>
 

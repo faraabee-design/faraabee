@@ -13,7 +13,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
 import { handleFirestoreError, OperationType } from '../lib/firestoreErrors';
-import { Product, Category, Promotion, Order, SocialLinks, StoreSettings, SpiritualPost, SpiritualSettings } from '../types';
+import { Product, Category, Promotion, Order, SocialLinks, StoreSettings, SpiritualPost, SpiritualSettings, DeliverySettings } from '../types';
 import { products as fallbackProducts } from '../data/products';
 import { fallbackSpiritualPosts, fallbackSpiritualSettings } from '../data/spiritual';
 import { siteConfig } from '../config/siteConfig';
@@ -88,6 +88,12 @@ interface StoreContextType {
   updateSpiritualPost: (id: string, updates: Partial<SpiritualPost>) => Promise<void>;
   deleteSpiritualPost: (id: string) => Promise<void>;
   updateSpiritualSettings: (settings: Partial<SpiritualSettings>) => Promise<void>;
+  // Delivery & Shipping settings
+  deliverySettings: DeliverySettings;
+  updateDeliverySettings: (updates: Partial<DeliverySettings>) => Promise<void>;
+  // Active currency display mode
+  activeCurrency: 'PKR' | 'USD';
+  setActiveCurrency: (curr: 'PKR' | 'USD') => void;
   // Image upload
   uploadProductImage: (file: File) => Promise<string>;
 }
@@ -102,6 +108,16 @@ const DEFAULT_CATEGORIES: Omit<Category, 'id'>[] = [
   { name: 'Herbal Preparations', slug: 'herbal-preparations', displayOrder: 5, active: true, description: 'Artisanal apothecary blends and herbal tonics' },
 ];
 
+const DEFAULT_DELIVERY_SETTINGS: DeliverySettings = {
+  standardShippingFee: siteConfig.currency.standardShippingFee || 250,
+  standardShippingFeeUSD: 10,
+  freeShippingThreshold: siteConfig.currency.freeShippingThreshold || 5000,
+  freeShippingThresholdUSD: 50,
+  freeShippingEnabled: true,
+  deliveryNote: 'Standard delivery across Pakistan takes 2-4 business days.',
+  estimatedDays: '2-4 Business Days',
+};
+
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAdmin } = useAuth();
   const [products, setProducts] = useState<Product[]>(fallbackProducts);
@@ -112,6 +128,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [spiritualSettings, setSpiritualSettings] = useState<SpiritualSettings>(fallbackSpiritualSettings);
   const [socialLinks, setSocialLinks] = useState<SocialLinks>(siteConfig.social);
   const [contactInfo, setContactInfo] = useState<typeof siteConfig.contact>(siteConfig.contact);
+  const [deliverySettings, setDeliverySettings] = useState<DeliverySettings>(DEFAULT_DELIVERY_SETTINGS);
+  const [activeCurrency, setActiveCurrency] = useState<'PKR' | 'USD'>('PKR');
   const [loading, setLoading] = useState(true);
 
   // 1. Subscribe to Products
@@ -244,9 +262,20 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       (err) => console.warn('Could not read contact info:', err.message)
     );
 
+    const unsubDelivery = onSnapshot(
+      doc(db, 'settings', 'delivery'),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          setDeliverySettings((prev) => ({ ...prev, ...(docSnap.data() as DeliverySettings) }));
+        }
+      },
+      (err) => console.warn('Could not read delivery settings:', err.message)
+    );
+
     return () => {
       unsubSocials();
       unsubContact();
+      unsubDelivery();
     };
   }, []);
 
@@ -358,6 +387,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       price: Number(productData.price) || 0,
       salePrice: productData.salePrice ? Number(productData.salePrice) : undefined,
       currency: productData.currency || 'PKR',
+      priceUSD: productData.priceUSD !== undefined && productData.priceUSD !== null ? Number(productData.priceUSD) : undefined,
+      salePriceUSD: productData.salePriceUSD !== undefined && productData.salePriceUSD !== null ? Number(productData.salePriceUSD) : undefined,
       volume: productData.volume || '100 ml',
       shortDescription: productData.shortDescription || '',
       description: productData.description || '',
@@ -792,6 +823,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const updateDeliverySettings = async (settings: Partial<DeliverySettings>) => {
+    const merged = { ...deliverySettings, ...settings };
+    setDeliverySettings(merged);
+    try {
+      const clean = cleanForCreate(merged);
+      await setDoc(doc(db, 'settings', 'delivery'), clean, { merge: true });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'settings/delivery');
+      throw err;
+    }
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -806,6 +849,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         activePromotion,
         socialLinks,
         contactInfo,
+        deliverySettings,
+        updateDeliverySettings,
+        activeCurrency,
+        setActiveCurrency,
         updateSocialLinks,
         updateContactInfo,
         addProduct,

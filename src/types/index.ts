@@ -7,6 +7,8 @@ export interface Product {
   price: number;
   salePrice?: number;
   currency: string;
+  priceUSD?: number;
+  salePriceUSD?: number;
   volume?: string;
   shortDescription: string;
   description: string;
@@ -107,6 +109,23 @@ export interface SocialLinks {
   customUrl?: string;
 }
 
+export interface DeliverySettings {
+  standardShippingFee: number;
+  standardShippingFeeUSD?: number;
+  freeShippingThreshold: number;
+  freeShippingThresholdUSD?: number;
+  freeShippingEnabled: boolean;
+  deliveryNote?: string;
+  estimatedDays?: string;
+}
+
+export interface AnnouncementSettings {
+  enabled: boolean;
+  text: string;
+  backgroundColor?: string;
+  textColor?: string;
+}
+
 export interface StoreSettings {
   socials: SocialLinks;
   contact: {
@@ -120,6 +139,8 @@ export interface StoreSettings {
     businessHours: string;
   };
   currency?: string;
+  delivery?: DeliverySettings;
+  announcement?: AnnouncementSettings;
   deliveryNote?: string;
   updatedAt?: string;
 }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Product } from '../types';
 import { siteConfig } from '../config/siteConfig';
+import { useStore } from '../context/StoreContext';
 import { ProductCard } from '../components/ProductCard';
 import {
   ShoppingBag,
@@ -34,6 +35,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   onAddToCart,
   onDirectOrder,
 }) => {
+  const { activeCurrency } = useStore();
   const [selectedImage, setSelectedImage] = useState<string>(product.image);
   const [quantity, setQuantity] = useState<number>(1);
   const [added, setAdded] = useState<boolean>(false);
@@ -49,9 +51,19 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     .filter((p) => p.id !== product.id && p.status === 'active' && (p.category === product.category || p.featured))
     .slice(0, 4);
 
-  const isDiscounted = product.salePrice !== undefined && product.salePrice < product.price;
-  const effectivePrice = isDiscounted ? (product.salePrice as number) : product.price;
-  const currencySymbol = product.currency || siteConfig.currency.symbol;
+  const isUSD = activeCurrency === 'USD' || product.currency === 'USD';
+  const effectiveBasePrice = isUSD
+    ? (product.priceUSD ?? (product.price ? Math.round(product.price / 280) : 0))
+    : product.price;
+  const effectiveSalePrice = isUSD
+    ? (product.salePriceUSD ?? (product.salePrice ? Math.round(product.salePrice / 280) : undefined))
+    : product.salePrice;
+  const isDiscounted = effectiveSalePrice !== undefined && effectiveSalePrice < effectiveBasePrice;
+  const effectivePrice = isDiscounted ? (effectiveSalePrice as number) : effectiveBasePrice;
+  const currencySymbol = isUSD ? '$' : (product.currency || 'Rs.');
+  const secondaryPriceTag = isUSD
+    ? (product.price ? `Rs. ${product.price.toLocaleString()}` : null)
+    : (product.priceUSD ? `$${product.priceUSD}` : null);
 
   const handleAddToCart = () => {
     if (!product.inStock) return;
@@ -154,20 +166,26 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               {isDiscounted ? (
                 <div className="flex items-baseline gap-2.5">
                   <span className="text-2xl sm:text-3xl font-bold text-[#183F32] tabular-nums">
-                    {currencySymbol} {product.salePrice?.toLocaleString()}
+                    {currencySymbol} {effectiveSalePrice?.toLocaleString()}
                   </span>
                   <span className="text-base text-[#26312B]/40 line-through tabular-nums">
-                    {currencySymbol} {product.price.toLocaleString()}
+                    {currencySymbol} {effectiveBasePrice.toLocaleString()}
                   </span>
                 </div>
               ) : (
                 <span className="text-2xl sm:text-3xl font-bold text-[#183F32] tabular-nums">
-                  {currencySymbol} {product.price.toLocaleString()}
+                  {currencySymbol} {effectiveBasePrice.toLocaleString()}
+                </span>
+              )}
+
+              {secondaryPriceTag && (
+                <span className="text-sm font-semibold text-[#183F32]/70 bg-[#E8F1DF]/70 px-2 py-0.5 rounded-md">
+                  {secondaryPriceTag}
                 </span>
               )}
 
               <span className="text-xs text-[#26312B]/70">
-                ({product.volume || '1 Unit'} · Domestic taxes included)
+                ({product.volume || '1 Unit'} · Taxes included)
               </span>
             </div>
 

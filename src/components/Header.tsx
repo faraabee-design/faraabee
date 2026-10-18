@@ -4,6 +4,7 @@ import { PageId } from '../types';
 import { ShoppingBag, Menu, X, ArrowUpRight } from 'lucide-react';
 import { siteConfig } from '../config/siteConfig';
 import { useCustomization, DynamicText } from '../context/CustomizationContext';
+import { useStore } from '../context/StoreContext';
 
 interface HeaderProps {
   currentPage: PageId;
@@ -18,7 +19,8 @@ export const Header: React.FC<HeaderProps> = ({
   cartCount,
   onOpenCart,
 }) => {
-  const { theme } = useCustomization();
+  const { theme, content } = useCustomization();
+  const { activeCurrency, setActiveCurrency } = useStore();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -48,16 +50,18 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-      {/* Top Customizable Announcement Ribbon */}
-      <div
-        className="w-full py-2 px-4 text-center text-xs transition-colors"
-        style={{
-          backgroundColor: theme.bannerBgColor,
-          color: theme.bannerTextColor,
-        }}
-      >
-        <DynamicText id="announcementText" />
-      </div>
+      {/* Top Customizable Announcement Ribbon (renders only when non-empty text is configured in Admin Portal) */}
+      {content.announcementText?.text && content.announcementText.text.trim().length > 0 ? (
+        <div
+          className="w-full py-2 px-4 text-center text-xs transition-colors"
+          style={{
+            backgroundColor: theme.bannerBgColor,
+            color: theme.bannerTextColor,
+          }}
+        >
+          <DynamicText id="announcementText" />
+        </div>
+      ) : null}
 
       <header
         className={`sticky top-0 z-40 w-full transition-all duration-300 ${
@@ -110,8 +114,36 @@ export const Header: React.FC<HeaderProps> = ({
               })}
             </nav>
 
-            {/* Zone 3: Actions (Cart & CTA) */}
-            <div className="flex items-center gap-3 sm:gap-4">
+            {/* Zone 3: Actions (Currency, Cart & CTA) */}
+            <div className="flex items-center gap-2.5 sm:gap-4">
+              {/* Currency Selector (PKR / USD) */}
+              <div className="flex items-center rounded-xl border border-[#AFC7A5]/40 bg-white/80 p-0.5 text-xs font-semibold shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setActiveCurrency('PKR')}
+                  className={`px-2 py-1 rounded-lg transition-all cursor-pointer ${
+                    activeCurrency === 'PKR'
+                      ? 'bg-[#183F32] text-white shadow-2xs'
+                      : 'text-[#26312B]/70 hover:text-[#183F32]'
+                  }`}
+                  title="View prices in PKR (Pakistani Rupee)"
+                >
+                  PKR
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveCurrency('USD')}
+                  className={`px-2 py-1 rounded-lg transition-all cursor-pointer ${
+                    activeCurrency === 'USD'
+                      ? 'bg-[#183F32] text-white shadow-2xs'
+                      : 'text-[#26312B]/70 hover:text-[#183F32]'
+                  }`}
+                  title="View prices in USD (US Dollar)"
+                >
+                  USD
+                </button>
+              </div>
+
               {/* Shopping Bag Trigger */}
               <button
                 onClick={onOpenCart}
@@ -188,7 +220,37 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
               );
             })}
-            <div className="pt-4 border-t border-black/10">
+            <div className="pt-3 border-t border-black/10 flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#183F32]">
+                Currency
+              </span>
+              <div className="flex items-center rounded-xl border border-[#AFC7A5]/40 bg-white p-0.5 text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setActiveCurrency('PKR')}
+                  className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                    activeCurrency === 'PKR'
+                      ? 'bg-[#183F32] text-white shadow-2xs'
+                      : 'text-[#26312B]/70 hover:text-[#183F32]'
+                  }`}
+                >
+                  PKR (Rs.)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveCurrency('USD')}
+                  className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                    activeCurrency === 'USD'
+                      ? 'bg-[#183F32] text-white shadow-2xs'
+                      : 'text-[#26312B]/70 hover:text-[#183F32]'
+                  }`}
+                >
+                  USD ($)
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-2">
               <button
                 onClick={() => handleNavClick('products')}
                 className="w-full py-3 text-center text-xs font-semibold uppercase tracking-wider rounded-xl transition-colors cursor-pointer shadow-xs"

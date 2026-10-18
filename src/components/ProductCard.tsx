@@ -3,6 +3,8 @@ import { Product } from '../types';
 import { Eye, ShoppingBag, Check } from 'lucide-react';
 import { siteConfig } from '../config/siteConfig';
 
+import { useStore } from '../context/StoreContext';
+
 interface ProductCardProps {
   product: Product;
   onViewProduct: (slug: string) => void;
@@ -14,6 +16,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onViewProduct,
   onAddToCart,
 }) => {
+  const { activeCurrency } = useStore();
   const [added, setAdded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
@@ -25,8 +28,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     setTimeout(() => setAdded(false), 1600);
   };
 
-  const isDiscounted = product.salePrice !== undefined && product.salePrice < product.price;
-  const currencySymbol = product.currency || siteConfig.currency.symbol;
+  const isUSD = activeCurrency === 'USD' || product.currency === 'USD';
+  const effectivePrice = isUSD
+    ? (product.priceUSD ?? (product.price ? Math.round(product.price / 280) : 0))
+    : product.price;
+  const effectiveSalePrice = isUSD
+    ? (product.salePriceUSD ?? (product.salePrice ? Math.round(product.salePrice / 280) : undefined))
+    : product.salePrice;
+  const isDiscounted = effectiveSalePrice !== undefined && effectiveSalePrice < effectivePrice;
+  const currencySymbol = isUSD ? '$' : (product.currency || 'Rs.');
+
+  // Secondary tag when both PKR & USD prices exist
+  const secondaryPriceTag = isUSD
+    ? (product.price ? `Rs. ${product.price.toLocaleString()}` : null)
+    : (product.priceUSD ? `$${product.priceUSD}` : null);
 
   return (
     <article
@@ -128,21 +143,28 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Price & View Link */}
         <div className="pt-3 border-t border-[#AFC7A5]/25 flex items-center justify-between mt-auto">
           <div className="flex flex-col">
-            <span className="text-[10px] uppercase tracking-wider text-[#26312B]/60 font-medium">
-              Price
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] uppercase tracking-wider text-[#26312B]/60 font-medium">
+                Price
+              </span>
+              {secondaryPriceTag && (
+                <span className="text-[10px] font-semibold text-[#183F32]/60 bg-[#E8F1DF]/50 px-1.5 py-0.2 rounded">
+                  {secondaryPriceTag}
+                </span>
+              )}
+            </div>
             {isDiscounted ? (
               <div className="flex items-baseline gap-1.5">
                 <span className="text-base font-semibold text-[#183F32] tabular-nums">
-                  {currencySymbol} {product.salePrice?.toLocaleString()}
+                  {currencySymbol} {effectiveSalePrice?.toLocaleString()}
                 </span>
                 <span className="text-xs text-[#26312B]/40 line-through tabular-nums">
-                  {currencySymbol} {product.price.toLocaleString()}
+                  {currencySymbol} {effectivePrice.toLocaleString()}
                 </span>
               </div>
             ) : (
               <span className="text-base font-semibold text-[#183F32] tabular-nums">
-                {currencySymbol} {product.price.toLocaleString()}
+                {currencySymbol} {effectivePrice.toLocaleString()}
               </span>
             )}
           </div>

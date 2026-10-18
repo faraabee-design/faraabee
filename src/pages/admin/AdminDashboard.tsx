@@ -12,6 +12,7 @@ import { AdminThemeCustomizer } from './AdminThemeCustomizer';
 import { AdminContentEditor } from './AdminContentEditor';
 import { AdminSpiritual } from './AdminSpiritual';
 import { AdminSecurity } from './AdminSecurity';
+import { AdminStoreSettings } from './AdminStoreSettings';
 import {
   LayoutDashboard,
   Package,
@@ -273,62 +274,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, o
         )}
 
         {activeTab === 'settings' && (
-          <div className="bg-white rounded-2xl p-6 border border-[#AFC7A5]/30 shadow-xs space-y-6 max-w-2xl">
-            <div>
-              <h2 className="text-lg font-serif font-bold text-[#183F32]">Website & Store Settings</h2>
-              <p className="text-xs text-[#26312B]/70 mt-0.5">
-                Configure primary currency display, WhatsApp support contact, and checkout terms.
-              </p>
-            </div>
-
-            <div className="space-y-4 text-xs">
-              <div>
-                <label className="block font-bold uppercase tracking-wider text-[#183F32] mb-1">
-                  Default Store Currency
-                </label>
-                <input
-                  type="text"
-                  value={storeCurrency}
-                  onChange={(e) => setStoreCurrency(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold uppercase tracking-wider text-[#183F32] mb-1">
-                  Customer Care / WhatsApp Order Line
-                </label>
-                <input
-                  type="text"
-                  value={supportPhone}
-                  onChange={(e) => setSupportPhone(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold uppercase tracking-wider text-[#183F32] mb-1">
-                  Delivery & Shipping Disclaimer (Checkout modal)
-                </label>
-                <textarea
-                  rows={2}
-                  value={deliveryNote}
-                  onChange={(e) => setDeliveryNote(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl"
-                />
-              </div>
-
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={() => showNotification('Settings updated')}
-                  className="px-5 py-2.5 bg-[#183F32] hover:bg-[#122F25] text-white font-semibold rounded-xl transition-colors cursor-pointer"
-                >
-                  Save Settings
-                </button>
-              </div>
-            </div>
-          </div>
+          <AdminStoreSettings onNotify={showNotification} />
         )}
       </main>
 

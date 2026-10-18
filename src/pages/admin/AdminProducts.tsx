@@ -302,15 +302,20 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onNotify, onPrevie
                         {isDiscounted ? (
                           <div>
                             <span className="font-bold text-[#183F32]">
-                              {p.currency} {p.salePrice?.toLocaleString()}
+                              {p.currency || 'PKR'} {p.salePrice?.toLocaleString()}
                             </span>
                             <span className="block text-[10px] text-[#26312B]/40 line-through">
-                              {p.currency} {p.price.toLocaleString()}
+                              {p.currency || 'PKR'} {p.price.toLocaleString()}
                             </span>
                           </div>
                         ) : (
                           <span className="font-bold text-[#183F32]">
-                            {p.currency} {p.price.toLocaleString()}
+                            {p.currency || 'PKR'} {p.price.toLocaleString()}
+                          </span>
+                        )}
+                        {p.priceUSD !== undefined && p.priceUSD > 0 && (
+                          <span className="inline-block mt-0.5 text-[10px] font-semibold text-emerald-800 bg-[#E8F1DF] px-1.5 py-0.2 rounded-md">
+                            ${p.salePriceUSD && p.salePriceUSD > 0 ? p.salePriceUSD : p.priceUSD} USD
                           </span>
                         )}
                       </td>
