@@ -13,6 +13,9 @@ import { AdminContentEditor } from './AdminContentEditor';
 import { AdminSpiritual } from './AdminSpiritual';
 import { AdminSecurity } from './AdminSecurity';
 import { AdminStoreSettings } from './AdminStoreSettings';
+import { AdminBundles } from './AdminBundles';
+import { AdminReviews } from './AdminReviews';
+import { AdminFeatures } from './AdminFeatures';
 import {
   LayoutDashboard,
   Package,
@@ -29,6 +32,9 @@ import {
   FileText,
   Sparkles,
   ShieldAlert,
+  Boxes,
+  Star,
+  BookOpen,
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -39,8 +45,11 @@ interface AdminDashboardProps {
 type TabType =
   | 'overview'
   | 'products'
+  | 'bundles'
   | 'categories'
+  | 'reviews'
   | 'spiritual'
+  | 'features'
   | 'theme'
   | 'content'
   | 'promotions'
@@ -71,8 +80,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, o
   const navItems = [
     { id: 'overview' as TabType, label: 'Overview', icon: LayoutDashboard },
     { id: 'products' as TabType, label: 'Products', icon: Package },
+    { id: 'bundles' as TabType, label: 'Care Bundles', icon: Boxes },
     { id: 'categories' as TabType, label: 'Categories', icon: Layers },
+    { id: 'reviews' as TabType, label: 'Customer Reviews', icon: Star },
     { id: 'spiritual' as TabType, label: 'Spiritual Sanctuary', icon: Sparkles },
+    { id: 'features' as TabType, label: 'Wisdom & Audio', icon: BookOpen },
     { id: 'theme' as TabType, label: 'Colors & Styling', icon: Palette },
     { id: 'content' as TabType, label: 'Live Text & Copy', icon: FileText },
     { id: 'promotions' as TabType, label: 'Promotions', icon: Tag },
@@ -241,12 +253,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, o
           />
         )}
 
+        {activeTab === 'bundles' && (
+          <AdminBundles onNotify={showNotification} />
+        )}
+
         {activeTab === 'categories' && (
           <AdminCategories onNotify={showNotification} />
         )}
 
+        {activeTab === 'reviews' && (
+          <AdminReviews onNotify={showNotification} />
+        )}
+
         {activeTab === 'spiritual' && (
           <AdminSpiritual onNotify={showNotification} />
+        )}
+
+        {activeTab === 'features' && (
+          <AdminFeatures onNotify={showNotification} />
         )}
 
         {activeTab === 'theme' && (

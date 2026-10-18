@@ -7,6 +7,7 @@ import { Footer } from './components/Footer';
 import { CartDrawer } from './components/CartDrawer';
 import { CheckoutModal } from './components/CheckoutModal';
 import { ArticleModal } from './components/ArticleModal';
+import { AudioSanctuaryPlayer } from './components/AudioSanctuaryPlayer';
 
 import { HomePage } from './pages/HomePage';
 import { AboutPage } from './pages/AboutPage';
@@ -314,6 +315,9 @@ function MainApp() {
         article={selectedArticle}
         onClose={() => setSelectedArticle(null)}
       />
+
+      {/* Audio Sanctuary Quranic & Ruqyah Player */}
+      <AudioSanctuaryPlayer />
 
       {/* Quiet Toast Notification */}
       {toastMessage && (

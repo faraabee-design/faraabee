@@ -3,6 +3,7 @@ import { Product } from '../types';
 import { siteConfig } from '../config/siteConfig';
 import { useStore } from '../context/StoreContext';
 import { ProductCard } from '../components/ProductCard';
+import { ReviewsSection } from '../components/ReviewsSection';
 import {
   ShoppingBag,
   MessageCircle,
@@ -404,6 +405,11 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             </div>
           </div>
         )}
+
+        {/* Product Reviews & Shifa Testimonials */}
+        <div className="mt-16">
+          <ReviewsSection productId={product.slug} productName={product.name} />
+        </div>
       </div>
     </div>
   );

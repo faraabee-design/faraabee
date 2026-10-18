@@ -13,9 +13,34 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
 import { handleFirestoreError, OperationType } from '../lib/firestoreErrors';
-import { Product, Category, Promotion, Order, SocialLinks, StoreSettings, SpiritualPost, SpiritualSettings, DeliverySettings } from '../types';
+import {
+  Product,
+  Category,
+  Promotion,
+  Order,
+  SocialLinks,
+  StoreSettings,
+  SpiritualPost,
+  SpiritualSettings,
+  DeliverySettings,
+  Review,
+  CareBundle,
+  BotanicalIngredient,
+  HikmatCard,
+  AudioTrack,
+  QuizConcern,
+  Language,
+} from '../types';
 import { products as fallbackProducts } from '../data/products';
 import { fallbackSpiritualPosts, fallbackSpiritualSettings } from '../data/spiritual';
+import {
+  fallbackReviews,
+  fallbackBundles,
+  fallbackBotanicals,
+  fallbackHikmatCards,
+  fallbackAudioTracks,
+  defaultQuizConcerns,
+} from '../data/featuresData';
 import { siteConfig } from '../config/siteConfig';
 import { useAuth } from './FirebaseContext';
 
@@ -94,6 +119,31 @@ interface StoreContextType {
   // Active currency display mode
   activeCurrency: 'PKR' | 'USD';
   setActiveCurrency: (curr: 'PKR' | 'USD') => void;
+  // Bilingual English / Urdu Mode
+  language: 'en' | 'ur';
+  setLanguage: (lang: 'en' | 'ur') => void;
+  // Customer Reviews
+  reviews: Review[];
+  addReview: (review: Omit<Review, 'id' | 'createdAt'>) => Promise<string>;
+  deleteReview: (id: string) => Promise<void>;
+  approveReview: (id: string, approved: boolean) => Promise<void>;
+  // Care Bundles & Packages
+  bundles: CareBundle[];
+  addBundle: (bundle: Partial<CareBundle>) => Promise<string>;
+  updateBundle: (id: string, updates: Partial<CareBundle>) => Promise<void>;
+  deleteBundle: (id: string) => Promise<void>;
+  // Botanical Ingredients Directory
+  botanicals: BotanicalIngredient[];
+  // Prophetic Hikmat Cards
+  hikmatCards: HikmatCard[];
+  addHikmatCard: (card: Partial<HikmatCard>) => Promise<string>;
+  updateHikmatCard: (id: string, updates: Partial<HikmatCard>) => Promise<void>;
+  deleteHikmatCard: (id: string) => Promise<void>;
+  // Audio Player Tracks
+  audioTracks: AudioTrack[];
+  updateAudioTracks: (tracks: AudioTrack[]) => Promise<void>;
+  // Consultation Quiz Concerns
+  quizConcerns: QuizConcern[];
   // Image upload
   uploadProductImage: (file: File) => Promise<string>;
 }
@@ -130,6 +180,28 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [contactInfo, setContactInfo] = useState<typeof siteConfig.contact>(siteConfig.contact);
   const [deliverySettings, setDeliverySettings] = useState<DeliverySettings>(DEFAULT_DELIVERY_SETTINGS);
   const [activeCurrency, setActiveCurrency] = useState<'PKR' | 'USD'>('PKR');
+  const [language, setLanguageState] = useState<Language>(() => {
+    try {
+      const saved = localStorage.getItem('faraabee_lang');
+      return (saved === 'ur' || saved === 'en') ? saved : 'en';
+    } catch {
+      return 'en';
+    }
+  });
+
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    try {
+      localStorage.setItem('faraabee_lang', lang);
+    } catch {}
+  };
+
+  const [reviews, setReviews] = useState<Review[]>(fallbackReviews);
+  const [bundles, setBundles] = useState<CareBundle[]>(fallbackBundles);
+  const [botanicals] = useState<BotanicalIngredient[]>(fallbackBotanicals);
+  const [hikmatCards, setHikmatCards] = useState<HikmatCard[]>(fallbackHikmatCards);
+  const [audioTracks, setAudioTracks] = useState<AudioTrack[]>(fallbackAudioTracks);
+  const [quizConcerns] = useState<QuizConcern[]>(defaultQuizConcerns);
   const [loading, setLoading] = useState(true);
 
   // 1. Subscribe to Products
@@ -835,6 +907,203 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  // 7. Subscribe to Reviews, Bundles, Hikmat Cards
+  useEffect(() => {
+    const unsubReviews = onSnapshot(
+      collection(db, 'reviews'),
+      (snap) => {
+        if (!snap.empty) {
+          const list: Review[] = [];
+          snap.forEach((d) => list.push({ id: d.id, ...d.data() } as Review));
+          setReviews(list);
+        }
+      },
+      () => {}
+    );
+
+    const unsubBundles = onSnapshot(
+      collection(db, 'bundles'),
+      (snap) => {
+        if (!snap.empty) {
+          const list: CareBundle[] = [];
+          snap.forEach((d) => list.push({ id: d.id, ...d.data() } as CareBundle));
+          setBundles(list);
+        }
+      },
+      () => {}
+    );
+
+    const unsubHikmat = onSnapshot(
+      collection(db, 'hikmatCards'),
+      (snap) => {
+        if (!snap.empty) {
+          const list: HikmatCard[] = [];
+          snap.forEach((d) => list.push({ id: d.id, ...d.data() } as HikmatCard));
+          setHikmatCards(list);
+        }
+      },
+      () => {}
+    );
+
+    const unsubAudio = onSnapshot(
+      doc(db, 'settings', 'audioSanctuary'),
+      (snap) => {
+        if (snap.exists() && snap.data().tracks) {
+          setAudioTracks(snap.data().tracks);
+        }
+      },
+      () => {}
+    );
+
+    return () => {
+      unsubReviews();
+      unsubBundles();
+      unsubHikmat();
+      unsubAudio();
+    };
+  }, []);
+
+  // CRUD Reviews
+  const addReview = async (reviewData: Omit<Review, 'id' | 'createdAt'>): Promise<string> => {
+    const newId = `rev-${Date.now()}`;
+    const newReview: Review = {
+      id: newId,
+      ...reviewData,
+      createdAt: new Date().toISOString(),
+    };
+    setReviews((prev) => [newReview, ...prev]);
+    try {
+      const clean = cleanForCreate(newReview);
+      await setDoc(doc(db, 'reviews', newId), clean);
+    } catch (err) {
+      console.warn('Could not save review to Firestore, saved locally:', err);
+    }
+    return newId;
+  };
+
+  const approveReview = async (id: string, approved: boolean): Promise<void> => {
+    setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, approved } : r)));
+    try {
+      await updateDoc(doc(db, 'reviews', id), { approved });
+    } catch (err) {
+      console.warn('Could not update review status in Firestore, updated locally:', err);
+    }
+  };
+
+  const deleteReview = async (id: string): Promise<void> => {
+    setReviews((prev) => prev.filter((r) => r.id !== id));
+    try {
+      await deleteDoc(doc(db, 'reviews', id));
+    } catch (err) {
+      console.warn('Could not delete review in Firestore, deleted locally:', err);
+    }
+  };
+
+  // CRUD Bundles
+  const addBundle = async (bundleData: Partial<CareBundle>): Promise<string> => {
+    const newId = bundleData.id || `bundle-${Date.now()}`;
+    const newBundle: CareBundle = {
+      id: newId,
+      slug: bundleData.slug || `bundle-${Date.now()}`,
+      name: bundleData.name || 'Care Package',
+      urduName: bundleData.urduName || '',
+      subtitle: bundleData.subtitle || '',
+      description: bundleData.description || '',
+      image: bundleData.image || 'https://images.unsplash.com/photo-1608248597359-001091a13e2f?auto=format&fit=crop&q=80&w=800',
+      productIds: bundleData.productIds || [],
+      originalPrice: bundleData.originalPrice || 3500,
+      bundlePrice: bundleData.bundlePrice || 2950,
+      originalPriceUSD: bundleData.originalPriceUSD || 24,
+      bundlePriceUSD: bundleData.bundlePriceUSD || 19,
+      savingsPercentage: bundleData.savingsPercentage || 15,
+      badge: bundleData.badge || 'Bachat Set',
+      active: bundleData.active ?? true,
+      featured: bundleData.featured ?? false,
+    };
+    setBundles((prev) => [newBundle, ...prev]);
+    try {
+      const clean = cleanForCreate(newBundle);
+      await setDoc(doc(db, 'bundles', newId), clean);
+    } catch (err) {
+      console.warn('Could not save bundle to Firestore, saved locally:', err);
+    }
+    return newId;
+  };
+
+  const updateBundle = async (id: string, updates: Partial<CareBundle>): Promise<void> => {
+    setBundles((prev) => prev.map((b) => (b.id === id ? { ...b, ...updates } : b)));
+    try {
+      const clean = cleanForCreate(updates);
+      await updateDoc(doc(db, 'bundles', id), clean);
+    } catch (err) {
+      console.warn('Could not update bundle in Firestore, updated locally:', err);
+    }
+  };
+
+  const deleteBundle = async (id: string): Promise<void> => {
+    setBundles((prev) => prev.filter((b) => b.id !== id));
+    try {
+      await deleteDoc(doc(db, 'bundles', id));
+    } catch (err) {
+      console.warn('Could not delete bundle in Firestore, deleted locally:', err);
+    }
+  };
+
+  // CRUD Hikmat Cards
+  const addHikmatCard = async (cardData: Partial<HikmatCard>): Promise<string> => {
+    const newId = cardData.id || `hikmat-${Date.now()}`;
+    const newCard: HikmatCard = {
+      id: newId,
+      title: cardData.title || '',
+      urduTitle: cardData.urduTitle || '',
+      propheticReference: cardData.propheticReference || '',
+      hadithText: cardData.hadithText || '',
+      urduHadithText: cardData.urduHadithText || '',
+      botanicalHerb: cardData.botanicalHerb || '',
+      modernSignificance: cardData.modernSignificance || '',
+      image: cardData.image || 'https://images.unsplash.com/photo-1608248597359-001091a13e2f?auto=format&fit=crop&q=80&w=800',
+      relatedProductSlug: cardData.relatedProductSlug || '',
+      active: cardData.active ?? true,
+    };
+    setHikmatCards((prev) => [newCard, ...prev]);
+    try {
+      const clean = cleanForCreate(newCard);
+      await setDoc(doc(db, 'hikmatCards', newId), clean);
+    } catch (err) {
+      console.warn('Could not save hikmat card to Firestore, saved locally:', err);
+    }
+    return newId;
+  };
+
+  const updateHikmatCard = async (id: string, updates: Partial<HikmatCard>): Promise<void> => {
+    setHikmatCards((prev) => prev.map((h) => (h.id === id ? { ...h, ...updates } : h)));
+    try {
+      const clean = cleanForCreate(updates);
+      await updateDoc(doc(db, 'hikmatCards', id), clean);
+    } catch (err) {
+      console.warn('Could not update hikmat card in Firestore, updated locally:', err);
+    }
+  };
+
+  const deleteHikmatCard = async (id: string): Promise<void> => {
+    setHikmatCards((prev) => prev.filter((h) => h.id !== id));
+    try {
+      await deleteDoc(doc(db, 'hikmatCards', id));
+    } catch (err) {
+      console.warn('Could not delete hikmat card in Firestore, deleted locally:', err);
+    }
+  };
+
+  // Audio Tracks
+  const updateAudioTracks = async (tracks: AudioTrack[]): Promise<void> => {
+    setAudioTracks(tracks);
+    try {
+      await setDoc(doc(db, 'settings', 'audioSanctuary'), { tracks });
+    } catch (err) {
+      console.warn('Could not update audio sanctuary in Firestore, updated locally:', err);
+    }
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -853,6 +1122,24 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateDeliverySettings,
         activeCurrency,
         setActiveCurrency,
+        language,
+        setLanguage,
+        reviews,
+        addReview,
+        deleteReview,
+        approveReview,
+        bundles,
+        addBundle,
+        updateBundle,
+        deleteBundle,
+        botanicals,
+        hikmatCards,
+        addHikmatCard,
+        updateHikmatCard,
+        deleteHikmatCard,
+        audioTracks,
+        updateAudioTracks,
+        quizConcerns,
         updateSocialLinks,
         updateContactInfo,
         addProduct,

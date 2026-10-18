@@ -202,3 +202,96 @@ export interface SecurityAlert {
   sourceUrl: string;
   read?: boolean;
 }
+
+export interface Review {
+  id: string;
+  productId: string;
+  productName?: string;
+  author: string;
+  rating: number; // 1 to 5
+  title: string;
+  comment: string;
+  usageDuration?: string; // e.g. "Used for 3 weeks"
+  verifiedBuyer: boolean;
+  city?: string;
+  createdAt: string;
+  approved: boolean;
+}
+
+export interface CareBundle {
+  id: string;
+  slug: string;
+  name: string;
+  urduName?: string;
+  subtitle: string;
+  description: string;
+  image: string;
+  productIds: string[];
+  originalPrice: number;
+  bundlePrice: number;
+  originalPriceUSD?: number;
+  bundlePriceUSD?: number;
+  savingsPercentage: number;
+  badge?: string;
+  active: boolean;
+  featured?: boolean;
+}
+
+export interface BotanicalIngredient {
+  id: string;
+  name: string;
+  botanicalName: string;
+  urduName?: string;
+  origin: string;
+  image: string;
+  temperament: string; // e.g. "Warm & Moist (گرم و تر)"
+  keyBenefits: string[];
+  traditionalUsage: string;
+  featuredInProducts: string[]; // product slugs
+  active: boolean;
+}
+
+export interface HikmatCard {
+  id: string;
+  title: string;
+  urduTitle?: string;
+  propheticReference: string; // e.g. "Sahih Bukhari #5688"
+  hadithText: string;
+  urduHadithText?: string;
+  botanicalHerb: string;
+  modernSignificance: string;
+  image: string;
+  relatedProductSlug?: string;
+  active: boolean;
+}
+
+export interface QuizConcern {
+  id: string;
+  label: string;
+  urduLabel: string;
+  icon: string;
+  description: string;
+  subOptions: {
+    id: string;
+    label: string;
+    urduLabel: string;
+    productSlug: string;
+    wazifaTitle: string;
+    wazifaArabic: string;
+    wazifaTranslation: string;
+    usageGuidance: string;
+  }[];
+}
+
+export interface AudioTrack {
+  id: string;
+  title: string;
+  urduTitle?: string;
+  reciter?: string;
+  duration: string;
+  url: string;
+  category: 'ruqyah' | 'adhkar' | 'quran' | 'ambience';
+  active: boolean;
+}
+
+export type Language = 'en' | 'ur';

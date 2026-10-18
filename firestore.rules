@@ -121,5 +121,18 @@ service cloud.firestore {
       allow create: if isValidId(alertId);
       allow get, list, update, delete: if isAdmin();
     }
+
+    // Customer Reviews Collection
+    match /reviews/{reviewId} {
+      allow get, list: if true;
+      allow create: if isValidId(reviewId) && incoming().rating is number && incoming().rating >= 1 && incoming().rating <= 5 && incoming().author is string && incoming().author.size() > 0;
+      allow update, delete: if isAdmin() && isValidId(reviewId);
+    }
+
+    // Curated Bundles Collection
+    match /bundles/{bundleId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin() && isValidId(bundleId);
+    }
   }
 }
