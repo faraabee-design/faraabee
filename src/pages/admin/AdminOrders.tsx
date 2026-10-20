@@ -373,7 +373,34 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({ onNotify }) => {
                   <span className="text-xl font-serif font-bold text-[#183F32]">
                     Rs. {order.total.toLocaleString()}
                   </span>
-                  <span className="text-[10px] text-emerald-800 block font-medium">Cash on Delivery</span>
+                  <div className="mt-1">
+                    {order.paymentMethod === 'bank' && (
+                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
+                        Bank Transfer
+                      </span>
+                    )}
+                    {order.paymentMethod === 'jazzcash' && (
+                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-800 border border-red-200">
+                        JazzCash Wallet
+                      </span>
+                    )}
+                    {order.paymentMethod === 'easypaisa' && (
+                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        Easypaisa Wallet
+                      </span>
+                    )}
+                    {(!order.paymentMethod || order.paymentMethod === 'cod') && (
+                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-800 border border-gray-200">
+                        Cash on Delivery
+                      </span>
+                    )}
+                  </div>
+                  {order.transactionId && (
+                    <div className="mt-1 text-[11px] font-mono text-[#183F32] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-1">
+                      <span className="font-bold">TID:</span>
+                      <span>{order.transactionId}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="w-full space-y-2">

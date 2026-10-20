@@ -258,7 +258,7 @@ export const ContactPage: React.FC = () => {
                     </label>
                     <input
                       type="tel"
-                      placeholder="e.g. 0309 1655743"
+                      placeholder="Enter phone or WhatsApp number"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       className="w-full px-3.5 py-2.5 text-xs rounded-lg border border-[#AFC7A5]/50 focus:border-[#183F32] focus:outline-none bg-[#FAF9F3]"

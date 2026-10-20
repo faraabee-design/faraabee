@@ -36,7 +36,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   onAddToCart,
   onDirectOrder,
 }) => {
-  const { activeCurrency } = useStore();
+  const { activeCurrency, language } = useStore();
   const [selectedImage, setSelectedImage] = useState<string>(product.image);
   const [quantity, setQuantity] = useState<number>(1);
   const [added, setAdded] = useState<boolean>(false);
@@ -71,11 +71,6 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     onAddToCart(product, quantity);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
-  };
-
-  const handleWhatsAppOrder = () => {
-    const text = `Salam FARAABEE Herbal,%0A%0AI would like to order:%0A• ${product.name} (${product.volume || 'Standard'}) x ${quantity}%0ATotal: ${currencySymbol} ${(effectivePrice * quantity).toLocaleString()}%0A%0APlease let me know the delivery schedule.`;
-    window.open(`https://wa.me/${siteConfig.contact.whatsappNumber}?text=${text}`, '_blank');
   };
 
   const toggleAccordion = (key: string) => {
@@ -200,7 +195,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               ) : (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-50 text-red-700 border border-red-200 rounded-lg text-xs font-semibold">
                   <AlertCircle className="w-3.5 h-3.5" />
-                  <span>Currently Out of Stock · Reserve via WhatsApp</span>
+                  <span>Currently Out of Stock</span>
                 </div>
               )}
             </div>
@@ -282,21 +277,19 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 </button>
               </div>
 
-              {/* Direct Order / WhatsApp */}
-              <div className="flex flex-col sm:flex-row gap-2 pt-1">
+              {/* Direct Express Checkout */}
+              <div className="pt-1">
                 <button
                   onClick={() => onDirectOrder(product, quantity)}
                   disabled={!product.inStock}
-                  className="flex-1 py-3 px-4 bg-[#235843] hover:bg-[#183F32] text-white text-xs font-semibold uppercase tracking-wider rounded-lg transition-colors cursor-pointer disabled:opacity-50 text-center"
+                  className="w-full py-3.5 px-4 bg-[#183F32] hover:bg-[#285844] text-white text-xs font-semibold uppercase tracking-wider rounded-xl transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 shadow-xs"
                 >
-                  Instant Checkout (COD)
-                </button>
-                <button
-                  onClick={handleWhatsAppOrder}
-                  className="py-3 px-4 border border-[#AFC7A5] hover:border-[#183F32] text-[#183F32] text-xs font-medium rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer bg-white"
-                >
-                  <MessageCircle className="w-4 h-4 text-[#285844]" />
-                  <span>Order via WhatsApp</span>
+                  <ShieldCheck className="w-4 h-4 text-[#AFC7A5]" />
+                  <span>
+                    {language === 'ur'
+                      ? 'براہ راست فوری خریداری (آن لائن / کیش)'
+                      : 'Express Checkout (Online Bank / Wallets / COD)'}
+                  </span>
                 </button>
               </div>
             </div>

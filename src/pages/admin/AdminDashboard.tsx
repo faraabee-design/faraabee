@@ -16,6 +16,7 @@ import { AdminStoreSettings } from './AdminStoreSettings';
 import { AdminBundles } from './AdminBundles';
 import { AdminReviews } from './AdminReviews';
 import { AdminFeatures } from './AdminFeatures';
+import { AdminGamification } from './AdminGamification';
 import {
   LayoutDashboard,
   Package,
@@ -35,6 +36,7 @@ import {
   Boxes,
   Star,
   BookOpen,
+  Gift,
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -56,6 +58,7 @@ type TabType =
   | 'orders'
   | 'security'
   | 'socials'
+  | 'gamification'
   | 'settings';
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, onPreviewProduct }) => {
@@ -67,7 +70,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, o
 
   // Settings state (simple persistent preferences)
   const [storeCurrency, setStoreCurrency] = useState('PKR');
-  const [supportPhone, setSupportPhone] = useState('+92 309 1655743');
+  const [supportPhone, setSupportPhone] = useState('');
   const [deliveryNote, setDeliveryNote] = useState('Standard delivery across Pakistan takes 2-4 business days.');
 
   const showNotification = (msg: string) => {
@@ -91,6 +94,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, o
     { id: 'orders' as TabType, label: 'Orders', icon: ShoppingBag },
     { id: 'security' as TabType, label: 'Security & Lockouts', icon: ShieldAlert },
     { id: 'socials' as TabType, label: 'Socials & Contact', icon: Share2 },
+    { id: 'gamification' as TabType, label: 'Wheel & Bargain', icon: Gift },
     { id: 'settings' as TabType, label: 'Store Settings', icon: Sliders },
   ];
 
@@ -295,6 +299,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, o
 
         {activeTab === 'socials' && (
           <AdminSocialsSettings onNotify={showNotification} />
+        )}
+
+        {activeTab === 'gamification' && (
+          <AdminGamification onNotify={showNotification} />
         )}
 
         {activeTab === 'settings' && (

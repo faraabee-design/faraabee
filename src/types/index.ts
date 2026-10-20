@@ -73,8 +73,37 @@ export interface Order {
   notes?: string;
   items: OrderItem[];
   total: number;
+  paymentMethod?: 'cod' | 'bank' | 'jazzcash' | 'easypaisa' | 'whatsapp';
+  transactionId?: string;
+  paymentSenderTitle?: string;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
   createdAt: string;
+}
+
+export interface BankAccountDetails {
+  enabled: boolean;
+  bankName: string;
+  accountTitle: string;
+  accountNumber: string;
+  iban: string;
+  branchName?: string;
+  instructions?: string;
+}
+
+export interface MobileWalletDetails {
+  enabled: boolean;
+  accountTitle: string;
+  mobileNumber: string;
+  instructions?: string;
+}
+
+export interface PaymentSettings {
+  codEnabled: boolean;
+  bankTransfer: BankAccountDetails;
+  jazzCash: MobileWalletDetails;
+  easyPaisa: MobileWalletDetails;
+  generalInstructions?: string;
+  updatedAt?: string;
 }
 
 export interface CartItem {
@@ -295,3 +324,53 @@ export interface AudioTrack {
 }
 
 export type Language = 'en' | 'ur';
+
+export interface WheelSlice {
+  id: string;
+  label: string;
+  labelUrdu: string;
+  couponCode: string;
+  type: 'discount_percent' | 'discount_fixed' | 'free_shipping' | 'free_gift' | 'blessing';
+  value: number;
+  color: string;
+  textColor: string;
+  probability: number;
+}
+
+export interface SpinWheelSettings {
+  enabled: boolean;
+  title: string;
+  titleUrdu: string;
+  subtitle: string;
+  subtitleUrdu: string;
+  triggerButtonText: string;
+  triggerButtonTextUrdu: string;
+  slices: WheelSlice[];
+  cooldownHours: number;
+  disclaimer: string;
+  disclaimerUrdu: string;
+  updatedAt?: string;
+}
+
+export interface HakeemBargainSettings {
+  enabled: boolean;
+  hakeemName: string;
+  hakeemNameUrdu: string;
+  hakeemTitle: string;
+  hakeemTitleUrdu: string;
+  buttonText: string;
+  buttonTextUrdu: string;
+  maxDiscountPercent: number;
+  counterOfferDiscountPercent: number;
+  tooLowThresholdPercent: number;
+  couponPrefix: string;
+  dialogues: {
+    tooLowUrdu: string[];
+    tooLowEnglish: string[];
+    counterOfferUrdu: string[];
+    counterOfferEnglish: string[];
+    acceptedUrdu: string[];
+    acceptedEnglish: string[];
+  };
+  updatedAt?: string;
+}

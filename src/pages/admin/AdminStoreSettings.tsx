@@ -14,6 +14,10 @@ import {
   RefreshCw,
   Layers,
   Info,
+  CreditCard,
+  Building2,
+  Smartphone,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface AdminStoreSettingsProps {
@@ -21,7 +25,15 @@ interface AdminStoreSettingsProps {
 }
 
 export const AdminStoreSettings: React.FC<AdminStoreSettingsProps> = ({ onNotify }) => {
-  const { deliverySettings, updateDeliverySettings, activeCurrency, setActiveCurrency } = useStore();
+  const {
+    deliverySettings,
+    updateDeliverySettings,
+    paymentSettings,
+    updatePaymentSettings,
+    activeCurrency,
+    setActiveCurrency,
+    contactInfo,
+  } = useStore();
   const { theme, content, updateTheme, updateTextItem } = useCustomization();
 
   // Announcement state
@@ -42,10 +54,34 @@ export const AdminStoreSettings: React.FC<AdminStoreSettingsProps> = ({ onNotify
   );
   const [savingDelivery, setSavingDelivery] = useState(false);
 
+  // Payment settings state
+  const [codEnabled, setCodEnabled] = useState(paymentSettings?.codEnabled ?? true);
+  // Bank transfer
+  const [bankEnabled, setBankEnabled] = useState(paymentSettings?.bankTransfer?.enabled ?? true);
+  const [bankName, setBankName] = useState(paymentSettings?.bankTransfer?.bankName || 'Meezan Bank Limited');
+  const [bankTitle, setBankTitle] = useState(paymentSettings?.bankTransfer?.accountTitle || 'FARAABEE BOTANICAL APOTHECARY');
+  const [bankNumber, setBankNumber] = useState(paymentSettings?.bankTransfer?.accountNumber || '02010108923412');
+  const [bankIban, setBankIban] = useState(paymentSettings?.bankTransfer?.iban || 'PK45MEZN0002010108923412');
+  const [bankBranch, setBankBranch] = useState(paymentSettings?.bankTransfer?.branchName || 'Model Town Islamic Branch, Gujranwala / Lahore');
+  const [bankInstructions, setBankInstructions] = useState(paymentSettings?.bankTransfer?.instructions || '');
+  // JazzCash
+  const [jazzEnabled, setJazzEnabled] = useState(paymentSettings?.jazzCash?.enabled ?? true);
+  const [jazzTitle, setJazzTitle] = useState(paymentSettings?.jazzCash?.accountTitle || 'Muhammad Faraabee');
+  const [jazzNumber, setJazzNumber] = useState(paymentSettings?.jazzCash?.mobileNumber || '');
+  const [jazzInstructions, setJazzInstructions] = useState(paymentSettings?.jazzCash?.instructions || '');
+  // Easypaisa
+  const [easyEnabled, setEasyEnabled] = useState(paymentSettings?.easyPaisa?.enabled ?? true);
+  const [easyTitle, setEasyTitle] = useState(paymentSettings?.easyPaisa?.accountTitle || 'Muhammad Faraabee');
+  const [easyNumber, setEasyNumber] = useState(paymentSettings?.easyPaisa?.mobileNumber || '');
+  const [easyInstructions, setEasyInstructions] = useState(paymentSettings?.easyPaisa?.instructions || '');
+  // General payment instructions
+  const [generalPaymentNote, setGeneralPaymentNote] = useState(paymentSettings?.generalInstructions || '');
+  const [savingPayment, setSavingPayment] = useState(false);
+
   // Currency & Contact settings state
   const [primaryCurrency, setPrimaryCurrency] = useState<'PKR' | 'USD'>(activeCurrency || 'PKR');
   const [conversionRate, setConversionRate] = useState('280');
-  const [supportPhone, setSupportPhone] = useState('+92 309 1655743');
+  const [supportPhone, setSupportPhone] = useState(contactInfo.phone || '');
   const [savingGeneral, setSavingGeneral] = useState(false);
 
   // Sync when remote context updates
@@ -69,6 +105,28 @@ export const AdminStoreSettings: React.FC<AdminStoreSettingsProps> = ({ onNotify
     setEstimatedDays(deliverySettings.estimatedDays || '2-4 Business Days');
     setDeliveryNote(deliverySettings.deliveryNote || 'Standard delivery across Pakistan takes 2-4 business days.');
   }, [deliverySettings]);
+
+  useEffect(() => {
+    if (paymentSettings) {
+      setCodEnabled(paymentSettings.codEnabled ?? true);
+      setBankEnabled(paymentSettings.bankTransfer?.enabled ?? true);
+      setBankName(paymentSettings.bankTransfer?.bankName || 'Meezan Bank Limited');
+      setBankTitle(paymentSettings.bankTransfer?.accountTitle || 'FARAABEE BOTANICAL APOTHECARY');
+      setBankNumber(paymentSettings.bankTransfer?.accountNumber || '02010108923412');
+      setBankIban(paymentSettings.bankTransfer?.iban || 'PK45MEZN0002010108923412');
+      setBankBranch(paymentSettings.bankTransfer?.branchName || 'Model Town Islamic Branch, Gujranwala / Lahore');
+      setBankInstructions(paymentSettings.bankTransfer?.instructions || '');
+      setJazzEnabled(paymentSettings.jazzCash?.enabled ?? true);
+      setJazzTitle(paymentSettings.jazzCash?.accountTitle || 'Muhammad Faraabee');
+      setJazzNumber(paymentSettings.jazzCash?.mobileNumber || '');
+      setJazzInstructions(paymentSettings.jazzCash?.instructions || '');
+      setEasyEnabled(paymentSettings.easyPaisa?.enabled ?? true);
+      setEasyTitle(paymentSettings.easyPaisa?.accountTitle || 'Muhammad Faraabee');
+      setEasyNumber(paymentSettings.easyPaisa?.mobileNumber || '');
+      setEasyInstructions(paymentSettings.easyPaisa?.instructions || '');
+      setGeneralPaymentNote(paymentSettings.generalInstructions || '');
+    }
+  }, [paymentSettings]);
 
   // Handlers for Announcement Ribbon
   const handleSaveAnnouncement = async () => {
@@ -126,6 +184,43 @@ export const AdminStoreSettings: React.FC<AdminStoreSettingsProps> = ({ onNotify
       onNotify('Failed to update delivery settings.');
     } finally {
       setSavingDelivery(false);
+    }
+  };
+
+  // Handlers for Online Payment Methods (Bank, JazzCash, Easypaisa, COD)
+  const handleSavePayment = async () => {
+    setSavingPayment(true);
+    try {
+      await updatePaymentSettings({
+        codEnabled,
+        bankTransfer: {
+          enabled: bankEnabled,
+          bankName: bankName.trim(),
+          accountTitle: bankTitle.trim(),
+          accountNumber: bankNumber.trim(),
+          iban: bankIban.trim(),
+          branchName: bankBranch.trim(),
+          instructions: bankInstructions.trim(),
+        },
+        jazzCash: {
+          enabled: jazzEnabled,
+          accountTitle: jazzTitle.trim(),
+          mobileNumber: jazzNumber.trim(),
+          instructions: jazzInstructions.trim(),
+        },
+        easyPaisa: {
+          enabled: easyEnabled,
+          accountTitle: easyTitle.trim(),
+          mobileNumber: easyNumber.trim(),
+          instructions: easyInstructions.trim(),
+        },
+        generalInstructions: generalPaymentNote.trim(),
+      });
+      onNotify('Online payment methods (Bank, JazzCash, Easypaisa) updated successfully!');
+    } catch {
+      onNotify('Failed to save payment settings.');
+    } finally {
+      setSavingPayment(false);
     }
   };
 
@@ -531,6 +626,324 @@ export const AdminStoreSettings: React.FC<AdminStoreSettingsProps> = ({ onNotify
       </section>
 
       {/* ============================================================== */}
+      {/* 2.5 ONLINE PAYMENT METHODS (BANK, JAZZCASH, EASYPAISA, COD) */}
+      {/* ============================================================== */}
+      <section className="bg-white rounded-3xl p-6 sm:p-8 border border-[#AFC7A5]/35 shadow-xs space-y-7">
+        <div className="flex items-center gap-3 pb-4 border-b border-[#AFC7A5]/25">
+          <div className="p-2.5 bg-[#E8F1DF] text-[#183F32] rounded-2xl">
+            <CreditCard className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="font-serif text-lg font-bold text-[#183F32]">
+              Online Payment Accounts (Bank, JazzCash & Easypaisa)
+            </h2>
+            <p className="text-xs text-[#26312B]/70 mt-0.5">
+              Configure your exact bank account and mobile wallet coordinates so customers can send money online directly during checkout.
+            </p>
+          </div>
+        </div>
+
+        {/* Master COD Toggle */}
+        <div className="p-4 bg-[#FAF9F3] rounded-2xl border border-[#AFC7A5]/30 flex items-center justify-between">
+          <div className="space-y-0.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#183F32] block">
+              Cash on Delivery (COD) Option
+            </span>
+            <p className="text-[11px] text-[#26312B]/70">
+              Allow buyers across Pakistan to pay with cash upon receiving parcel.
+            </p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={codEnabled}
+              onChange={(e) => setCodEnabled(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#183F32]"></div>
+          </label>
+        </div>
+
+        {/* 1. Online Bank Transfer Configuration */}
+        <div className="p-5 bg-gradient-to-br from-[#FAF9F3] to-white rounded-2xl border border-[#AFC7A5]/40 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[#AFC7A5]/20">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-emerald-100 text-[#183F32] rounded-xl">
+                <Building2 className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#183F32]">
+                  1. Direct Bank Account Details
+                </h3>
+                <span className="text-[11px] text-[#26312B]/70">
+                  Customers can transfer money via IBFT, online banking app, or ATM
+                </span>
+              </div>
+            </div>
+            <label className="flex items-center gap-2 text-xs font-semibold text-[#183F32] cursor-pointer">
+              <span>{bankEnabled ? 'Active' : 'Disabled'}</span>
+              <input
+                type="checkbox"
+                checked={bankEnabled}
+                onChange={(e) => setBankEnabled(e.target.checked)}
+                className="w-4 h-4 text-[#183F32] rounded border-gray-300 focus:ring-[#183F32]"
+              />
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-[#183F32] mb-1">
+                Bank Name *
+              </label>
+              <input
+                type="text"
+                value={bankName}
+                onChange={(e) => setBankName(e.target.value)}
+                placeholder="e.g. Meezan Bank Limited, HBL, Bank Alfalah"
+                className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-[#183F32] mb-1">
+                Account Title (Beneficiary Name) *
+              </label>
+              <input
+                type="text"
+                value={bankTitle}
+                onChange={(e) => setBankTitle(e.target.value)}
+                placeholder="e.g. FARAABEE BOTANICAL APOTHECARY"
+                className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-[#183F32] mb-1">
+                Account Number *
+              </label>
+              <input
+                type="text"
+                value={bankNumber}
+                onChange={(e) => setBankNumber(e.target.value)}
+                placeholder="Bank Account Number"
+                className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-[#183F32] mb-1">
+                IBAN (24 Characters) *
+              </label>
+              <input
+                type="text"
+                value={bankIban}
+                onChange={(e) => setBankIban(e.target.value)}
+                placeholder="Bank IBAN (e.g. PK...)"
+                className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-xs font-mono font-bold uppercase focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-[#183F32] mb-1">
+                Branch Name & City
+              </label>
+              <input
+                type="text"
+                value={bankBranch}
+                onChange={(e) => setBankBranch(e.target.value)}
+                placeholder="e.g. Model Town Islamic Branch, Gujranwala / Lahore"
+                className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-[#183F32] mb-1">
+                Transfer Instructions for Customer
+              </label>
+              <input
+                type="text"
+                value={bankInstructions}
+                onChange={(e) => setBankInstructions(e.target.value)}
+                placeholder="e.g. Please enter your Order ID in remarks or share Transaction ID (TID) after transfer."
+                className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 2. JazzCash Account Configuration */}
+        <div className="p-5 bg-gradient-to-br from-[#FAF9F3] to-white rounded-2xl border border-[#AFC7A5]/40 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[#AFC7A5]/20">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-red-100 text-red-700 rounded-xl font-bold text-xs">
+                JC
+              </div>
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#183F32]">
+                  2. JazzCash Wallet Details
+                </h3>
+                <span className="text-[11px] text-[#26312B]/70">
+                  Customers can transfer money instantly via JazzCash mobile app or retail agent
+                </span>
+              </div>
+            </div>
+            <label className="flex items-center gap-2 text-xs font-semibold text-[#183F32] cursor-pointer">
+              <span>{jazzEnabled ? 'Active' : 'Disabled'}</span>
+              <input
+                type="checkbox"
+                checked={jazzEnabled}
+                onChange={(e) => setJazzEnabled(e.target.checked)}
+                className="w-4 h-4 text-[#183F32] rounded border-gray-300 focus:ring-[#183F32]"
+              />
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-[#183F32] mb-1">
+                JazzCash Account Title *
+              </label>
+              <input
+                type="text"
+                value={jazzTitle}
+                onChange={(e) => setJazzTitle(e.target.value)}
+                placeholder="e.g. Muhammad Faraabee"
+                className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-[#183F32] mb-1">
+                JazzCash Mobile / Till Number *
+              </label>
+              <input
+                type="text"
+                value={jazzNumber}
+                onChange={(e) => setJazzNumber(e.target.value)}
+                placeholder="JazzCash Mobile Number"
+                className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-[#183F32] mb-1">
+                JazzCash Instructions for Buyer
+              </label>
+              <input
+                type="text"
+                value={jazzInstructions}
+                onChange={(e) => setJazzInstructions(e.target.value)}
+                placeholder="e.g. Send via JazzCash App -> Money Transfer -> Mobile Account. Paste TID below."
+                className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Easypaisa Account Configuration */}
+        <div className="p-5 bg-gradient-to-br from-[#FAF9F3] to-white rounded-2xl border border-[#AFC7A5]/40 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[#AFC7A5]/20">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-emerald-100 text-emerald-800 rounded-xl font-bold text-xs">
+                EP
+              </div>
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#183F32]">
+                  3. Easypaisa Wallet Details
+                </h3>
+                <span className="text-[11px] text-[#26312B]/70">
+                  Customers can transfer money instantly via Easypaisa mobile app
+                </span>
+              </div>
+            </div>
+            <label className="flex items-center gap-2 text-xs font-semibold text-[#183F32] cursor-pointer">
+              <span>{easyEnabled ? 'Active' : 'Disabled'}</span>
+              <input
+                type="checkbox"
+                checked={easyEnabled}
+                onChange={(e) => setEasyEnabled(e.target.checked)}
+                className="w-4 h-4 text-[#183F32] rounded border-gray-300 focus:ring-[#183F32]"
+              />
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-[#183F32] mb-1">
+                Easypaisa Account Title *
+              </label>
+              <input
+                type="text"
+                value={easyTitle}
+                onChange={(e) => setEasyTitle(e.target.value)}
+                placeholder="e.g. Muhammad Faraabee"
+                className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-[#183F32] mb-1">
+                Easypaisa Mobile Number *
+              </label>
+              <input
+                type="text"
+                value={easyNumber}
+                onChange={(e) => setEasyNumber(e.target.value)}
+                placeholder="Easypaisa Mobile Number"
+                className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-[#183F32] mb-1">
+                Easypaisa Instructions for Buyer
+              </label>
+              <input
+                type="text"
+                value={easyInstructions}
+                onChange={(e) => setEasyInstructions(e.target.value)}
+                placeholder="e.g. Open Easypaisa App -> Send Money -> Easypaisa Account. Enter TID below."
+                className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#183F32] bg-white"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 4. General Payment Note */}
+        <div>
+          <label className="block text-xs font-bold uppercase tracking-wider text-[#183F32] mb-1">
+            General Payment Notice (Shown to Customers at Checkout)
+          </label>
+          <textarea
+            rows={2}
+            value={generalPaymentNote}
+            onChange={(e) => setGeneralPaymentNote(e.target.value)}
+            placeholder="Online bank & wallet payments receive instant priority packing. Your order reference and tracking will be dispatched to your phone."
+            className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#183F32]"
+          />
+        </div>
+
+        <div className="pt-3 border-t border-[#AFC7A5]/20 flex justify-end">
+          <button
+            type="button"
+            onClick={handleSavePayment}
+            disabled={savingPayment}
+            className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#183F32] hover:bg-[#122F25] text-white text-xs font-semibold uppercase tracking-wider rounded-xl transition-all shadow-xs cursor-pointer disabled:opacity-50"
+          >
+            {savingPayment ? (
+              <span>Saving Payment Accounts...</span>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                <span>Save Payment Accounts</span>
+              </>
+            )}
+          </button>
+        </div>
+      </section>
+
+      {/* ============================================================== */}
       {/* 3. MULTI-CURRENCY & PRODUCT PRICING OPTIONS */}
       {/* ============================================================== */}
       <section className="bg-white rounded-3xl p-6 sm:p-8 border border-[#AFC7A5]/35 shadow-xs space-y-6">
@@ -607,17 +1020,17 @@ export const AdminStoreSettings: React.FC<AdminStoreSettingsProps> = ({ onNotify
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-[#183F32] mb-1">
-                WhatsApp Order Line / Support
+                Customer Support Phone Line
               </label>
               <input
                 type="text"
                 value={supportPhone}
                 onChange={(e) => setSupportPhone(e.target.value)}
-                placeholder="+92 309 1655743"
+                placeholder="Customer Support Phone Number"
                 className="w-full px-3 py-2 border border-[#AFC7A5]/40 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#183F32]"
               />
               <span className="text-[11px] text-[#26312B]/60 mt-1 block">
-                Direct WhatsApp contact for phone consultations & inquiries.
+                Direct customer assistance telephone / phone line.
               </span>
             </div>
           </div>

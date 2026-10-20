@@ -308,7 +308,7 @@ export const AdminSocialsSettings: React.FC<AdminSocialsSettingsProps> = ({ onNo
                 type="url"
                 value={links.whatsapp || ''}
                 onChange={(e) => setLinks({ ...links, whatsapp: e.target.value })}
-                placeholder="https://wa.me/923091655743"
+                placeholder="https://wa.me/your-number"
                 className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-[#AFC7A5]/40 focus:border-[#183F32] focus:ring-1 focus:ring-[#183F32] bg-[#FAF9F3]/30"
               />
             </div>
@@ -478,7 +478,7 @@ export const AdminSocialsSettings: React.FC<AdminSocialsSettingsProps> = ({ onNo
                   required
                   value={contact.whatsappDisplay}
                   onChange={(e) => setContact({ ...contact, whatsappDisplay: e.target.value })}
-                  placeholder="+92 309 1655743"
+                  placeholder="WhatsApp Display Number"
                   className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-[#AFC7A5]/40 bg-[#FAF9F3]/30"
                 />
               </div>

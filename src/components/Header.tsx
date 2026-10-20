@@ -20,7 +20,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenCart,
 }) => {
   const { theme, content } = useCustomization();
-  const { activeCurrency, setActiveCurrency } = useStore();
+  const { activeCurrency, setActiveCurrency, language, setLanguage } = useStore();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -33,13 +33,13 @@ export const Header: React.FC<HeaderProps> = ({
   }, []);
 
   const navLinks: { label: string; page: PageId }[] = [
-    { label: 'Home', page: 'home' },
-    { label: 'About', page: 'about' },
-    { label: 'Products', page: 'products' },
-    { label: 'Spiritual Sanctuary', page: 'spiritual' },
-    { label: 'Herbal Journal', page: 'journal' },
-    { label: 'Track Order', page: 'track-order' },
-    { label: 'Contact', page: 'contact' },
+    { label: language === 'ur' ? 'مرکزی صفحہ' : 'Home', page: 'home' },
+    { label: language === 'ur' ? 'ہمارا تعارف' : 'About', page: 'about' },
+    { label: language === 'ur' ? 'نباتیاتی ادویات' : 'Products', page: 'products' },
+    { label: language === 'ur' ? 'روحانی شفا' : 'Spiritual Sanctuary', page: 'spiritual' },
+    { label: language === 'ur' ? 'طبی مضامین' : 'Herbal Journal', page: 'journal' },
+    { label: language === 'ur' ? 'آرڈر ٹریکنگ' : 'Track Order', page: 'track-order' },
+    { label: language === 'ur' ? 'رابطہ' : 'Contact', page: 'contact' },
   ];
 
   const handleNavClick = (page: PageId) => {
@@ -114,8 +114,36 @@ export const Header: React.FC<HeaderProps> = ({
               })}
             </nav>
 
-            {/* Zone 3: Actions (Currency, Cart & CTA) */}
-            <div className="flex items-center gap-2.5 sm:gap-4">
+            {/* Zone 3: Actions (Language, Currency, Cart & CTA) */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* Instant Language Switcher (EN <-> اردو) */}
+              <div className="flex items-center rounded-xl border border-[#AFC7A5]/40 bg-white/85 p-0.5 text-xs font-semibold shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setLanguage('en')}
+                  className={`px-2 py-1 rounded-lg transition-all cursor-pointer ${
+                    language === 'en'
+                      ? 'bg-[#183F32] text-white shadow-2xs'
+                      : 'text-[#26312B]/70 hover:text-[#183F32]'
+                  }`}
+                  title="Switch to English"
+                >
+                  EN
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLanguage('ur')}
+                  className={`px-2 py-1 rounded-lg font-serif transition-all cursor-pointer ${
+                    language === 'ur'
+                      ? 'bg-[#183F32] text-white shadow-2xs'
+                      : 'text-[#26312B]/70 hover:text-[#183F32]'
+                  }`}
+                  title="اردو میں دیکھیں (Switch to Urdu)"
+                >
+                  اردو
+                </button>
+              </div>
+
               {/* Currency Selector (PKR / USD) */}
               <div className="flex items-center rounded-xl border border-[#AFC7A5]/40 bg-white/80 p-0.5 text-xs font-semibold shadow-2xs">
                 <button
@@ -168,13 +196,13 @@ export const Header: React.FC<HeaderProps> = ({
               {/* Desktop CTA */}
               <button
                 onClick={() => handleNavClick('products')}
-                className="hidden sm:inline-flex items-center gap-1.5 px-4.5 py-2 text-xs font-semibold uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-2xs hover:opacity-90"
+                className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-2xs hover:opacity-90"
                 style={{
                   backgroundColor: theme.buttonBgColor,
                   color: theme.buttonTextColor,
                 }}
               >
-                <span>Shop Remedies</span>
+                <span>{language === 'ur' ? 'خالص ادویات' : 'Shop Remedies'}</span>
                 <ArrowUpRight className="w-3.5 h-3.5" />
               </button>
 
@@ -220,9 +248,40 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
               );
             })}
+            {/* Mobile Language Switcher */}
             <div className="pt-3 border-t border-black/10 flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-[#183F32]">
-                Currency
+                {language === 'ur' ? 'زبان کا انتخاب' : 'Language'}
+              </span>
+              <div className="flex items-center rounded-xl border border-[#AFC7A5]/40 bg-white p-0.5 text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setLanguage('en')}
+                  className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                    language === 'en'
+                      ? 'bg-[#183F32] text-white shadow-2xs'
+                      : 'text-[#26312B]/70 hover:text-[#183F32]'
+                  }`}
+                >
+                  English
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLanguage('ur')}
+                  className={`px-3 py-1 rounded-lg font-serif transition-all cursor-pointer ${
+                    language === 'ur'
+                      ? 'bg-[#183F32] text-white shadow-2xs'
+                      : 'text-[#26312B]/70 hover:text-[#183F32]'
+                  }`}
+                >
+                  اردو
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-2 flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#183F32]">
+                {language === 'ur' ? 'کرنسی' : 'Currency'}
               </span>
               <div className="flex items-center rounded-xl border border-[#AFC7A5]/40 bg-white p-0.5 text-xs font-semibold">
                 <button

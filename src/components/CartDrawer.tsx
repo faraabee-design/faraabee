@@ -23,7 +23,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onProceedToCheckout,
   onNavigateToProducts,
 }) => {
-  const { deliverySettings, activeCurrency } = useStore();
+  const { deliverySettings, activeCurrency, language } = useStore();
   if (!isOpen) return null;
 
   const isUSD = activeCurrency === 'USD';
@@ -211,14 +211,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
               <button
                 onClick={onProceedToCheckout}
-                className="w-full py-3.5 px-4 bg-[#183F32] hover:bg-[#285844] text-white text-xs font-semibold uppercase tracking-wider rounded-lg shadow-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                className="w-full py-3.5 px-4 bg-[#183F32] hover:bg-[#285844] text-white text-xs font-semibold uppercase tracking-wider rounded-xl shadow-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
-                <span>Proceed to Order</span>
+                <span>{language === 'ur' ? 'آرڈر مکمل کرنے کے لیے آگے بڑھیں' : 'Proceed to Checkout'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 
               <p className="text-[11px] text-center text-[#26312B]/60">
-                Cash on Delivery (COD) · WhatsApp Order · Bank Transfer
+                {language === 'ur'
+                  ? 'کیش آن ڈیلیوری (COD) · آن لائن بینک ٹرانسفر · جاز کیش · ایزی پیسہ'
+                  : 'Cash on Delivery (COD) · Bank Transfer · JazzCash · Easypaisa'}
               </p>
             </div>
           )}

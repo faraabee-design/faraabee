@@ -12,7 +12,7 @@ export const BundlesSection: React.FC<BundlesSectionProps> = ({
   onViewProduct,
   onAddToCart,
 }) => {
-  const { bundles, products, activeCurrency } = useStore();
+  const { bundles, products, activeCurrency, language } = useStore();
   const [addedBundleId, setAddedBundleId] = useState<string | null>(null);
 
   const activeBundles = bundles.filter((b) => b.active);
@@ -75,13 +75,15 @@ export const BundlesSection: React.FC<BundlesSectionProps> = ({
         <div className="text-center max-w-2xl mx-auto mb-14">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#183F32]/10 border border-[#183F32]/20 text-[#183F32] text-xs font-semibold uppercase tracking-wider mb-3">
             <Sparkles className="w-3.5 h-3.5 text-[#285844]" />
-            <span>Curated Bachat Packages & Sets</span>
+            <span>{language === 'ur' ? 'بچت پیکیجز اور روایتی سیٹ' : 'Curated Bachat Packages & Sets'}</span>
           </div>
           <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-medium text-[#183F32] tracking-tight">
-            Holistic Care Bundles
+            {language === 'ur' ? 'علاج اور شفا کے خصوصی پیکیجز' : 'Holistic Care Bundles'}
           </h2>
           <p className="mt-3 text-sm sm:text-base text-[#26312B]/75 leading-relaxed">
-            Thoughtfully paired herbal preparations working in physiological harmony. Enjoy privileged apothecary pricing on complete restorative regimens.
+            {language === 'ur'
+              ? 'سوچ سمجھ کر منتخب کردہ نباتیاتی تراکیب جو ہم آہنگی سے کام کرتی ہیں۔ مکمل صحتیابی کے علاج پر خصوصی بچت حاصل فرمائیں۔'
+              : 'Thoughtfully paired herbal preparations working in physiological harmony. Enjoy privileged apothecary pricing on complete restorative regimens.'}
           </p>
         </div>
 

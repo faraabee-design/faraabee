@@ -30,7 +30,16 @@ import {
   AudioTrack,
   QuizConcern,
   Language,
+  PaymentSettings,
+  SpinWheelSettings,
+  HakeemBargainSettings,
+  WheelSlice,
 } from '../types';
+import { DEFAULT_PAYMENT_SETTINGS } from '../config/defaultPayment';
+import {
+  DEFAULT_SPIN_WHEEL_SETTINGS,
+  DEFAULT_HAKEEM_BARGAIN_SETTINGS,
+} from '../config/defaultFunFeatures';
 import { products as fallbackProducts } from '../data/products';
 import { fallbackSpiritualPosts, fallbackSpiritualSettings } from '../data/spiritual';
 import {
@@ -41,6 +50,7 @@ import {
   fallbackAudioTracks,
   defaultQuizConcerns,
 } from '../data/featuresData';
+import { translations, TranslationDictionary } from '../i18n/translations';
 import { siteConfig } from '../config/siteConfig';
 import { useAuth } from './FirebaseContext';
 
@@ -116,12 +126,30 @@ interface StoreContextType {
   // Delivery & Shipping settings
   deliverySettings: DeliverySettings;
   updateDeliverySettings: (updates: Partial<DeliverySettings>) => Promise<void>;
+  // Online Payment Settings (Bank Transfer, JazzCash, Easypaisa, COD)
+  paymentSettings: PaymentSettings;
+  updatePaymentSettings: (updates: Partial<PaymentSettings>) => Promise<void>;
+  // Spin the Shifa Wheel & Hakeem Bargain Gamification
+  spinWheelSettings: SpinWheelSettings;
+  updateSpinWheelSettings: (updates: Partial<SpinWheelSettings>) => Promise<void>;
+  hakeemBargainSettings: HakeemBargainSettings;
+  updateHakeemBargainSettings: (updates: Partial<HakeemBargainSettings>) => Promise<void>;
+  appliedCoupon: {
+    code: string;
+    discountPercent?: number;
+    discountAmount?: number;
+    freeShipping?: boolean;
+    freeGift?: string;
+  } | null;
+  applyCoupon: (code: string) => boolean;
+  removeCoupon: () => void;
   // Active currency display mode
   activeCurrency: 'PKR' | 'USD';
   setActiveCurrency: (curr: 'PKR' | 'USD') => void;
   // Bilingual English / Urdu Mode
   language: 'en' | 'ur';
   setLanguage: (lang: 'en' | 'ur') => void;
+  t: TranslationDictionary;
   // Customer Reviews
   reviews: Review[];
   addReview: (review: Omit<Review, 'id' | 'createdAt'>) => Promise<string>;
@@ -179,6 +207,23 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [socialLinks, setSocialLinks] = useState<SocialLinks>(siteConfig.social);
   const [contactInfo, setContactInfo] = useState<typeof siteConfig.contact>(siteConfig.contact);
   const [deliverySettings, setDeliverySettings] = useState<DeliverySettings>(DEFAULT_DELIVERY_SETTINGS);
+  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(DEFAULT_PAYMENT_SETTINGS);
+  const [spinWheelSettings, setSpinWheelSettings] = useState<SpinWheelSettings>(DEFAULT_SPIN_WHEEL_SETTINGS);
+  const [hakeemBargainSettings, setHakeemBargainSettings] = useState<HakeemBargainSettings>(DEFAULT_HAKEEM_BARGAIN_SETTINGS);
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discountPercent?: number;
+    discountAmount?: number;
+    freeShipping?: boolean;
+    freeGift?: string;
+  } | null>(() => {
+    try {
+      const saved = localStorage.getItem('faraabee_applied_coupon');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
   const [activeCurrency, setActiveCurrency] = useState<'PKR' | 'USD'>('PKR');
   const [language, setLanguageState] = useState<Language>(() => {
     try {
@@ -189,10 +234,30 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   });
 
+  // Sync document language and direction
+  useEffect(() => {
+    try {
+      if (language === 'ur') {
+        document.documentElement.setAttribute('lang', 'ur');
+        document.documentElement.setAttribute('dir', 'rtl');
+      } else {
+        document.documentElement.setAttribute('lang', 'en');
+        document.documentElement.setAttribute('dir', 'ltr');
+      }
+    } catch {}
+  }, [language]);
+
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
     try {
       localStorage.setItem('faraabee_lang', lang);
+      if (lang === 'ur') {
+        document.documentElement.setAttribute('lang', 'ur');
+        document.documentElement.setAttribute('dir', 'rtl');
+      } else {
+        document.documentElement.setAttribute('lang', 'en');
+        document.documentElement.setAttribute('dir', 'ltr');
+      }
     } catch {}
   };
 
@@ -344,10 +409,43 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       (err) => console.warn('Could not read delivery settings:', err.message)
     );
 
+    const unsubPayment = onSnapshot(
+      doc(db, 'settings', 'payment'),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          setPaymentSettings((prev) => ({ ...prev, ...(docSnap.data() as PaymentSettings) }));
+        }
+      },
+      (err) => console.warn('Could not read payment settings:', err.message)
+    );
+
+    const unsubSpinWheel = onSnapshot(
+      doc(db, 'settings', 'spinWheel'),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          setSpinWheelSettings((prev) => ({ ...prev, ...(docSnap.data() as SpinWheelSettings) }));
+        }
+      },
+      (err) => console.warn('Could not read spin wheel settings:', err.message)
+    );
+
+    const unsubHakeemBargain = onSnapshot(
+      doc(db, 'settings', 'hakeemBargain'),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          setHakeemBargainSettings((prev) => ({ ...prev, ...(docSnap.data() as HakeemBargainSettings) }));
+        }
+      },
+      (err) => console.warn('Could not read hakeem bargain settings:', err.message)
+    );
+
     return () => {
       unsubSocials();
       unsubContact();
       unsubDelivery();
+      unsubPayment();
+      unsubSpinWheel();
+      unsubHakeemBargain();
     };
   }, []);
 
@@ -653,6 +751,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       items: sanitizedItems,
       total: Number(orderData.total) || 0,
       status: orderData.status || 'pending',
+      paymentMethod: orderData.paymentMethod || 'cod',
+      transactionId: orderData.transactionId ? String(orderData.transactionId).trim() : '',
+      paymentSenderTitle: orderData.paymentSenderTitle ? String(orderData.paymentSenderTitle).trim() : '',
     };
 
     const cleanPayload = cleanForCreate(fullOrder);
@@ -907,6 +1008,118 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const updatePaymentSettings = async (settings: Partial<PaymentSettings>) => {
+    const merged = { ...paymentSettings, ...settings, updatedAt: new Date().toISOString() };
+    setPaymentSettings(merged);
+    try {
+      const clean = cleanForCreate(merged);
+      await setDoc(doc(db, 'settings', 'payment'), clean, { merge: true });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'settings/payment');
+      throw err;
+    }
+  };
+
+  const updateSpinWheelSettings = async (settings: Partial<SpinWheelSettings>) => {
+    const merged = { ...spinWheelSettings, ...settings, updatedAt: new Date().toISOString() };
+    setSpinWheelSettings(merged);
+    try {
+      const clean = cleanForCreate(merged);
+      await setDoc(doc(db, 'settings', 'spinWheel'), clean, { merge: true });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'settings/spinWheel');
+      throw err;
+    }
+  };
+
+  const updateHakeemBargainSettings = async (settings: Partial<HakeemBargainSettings>) => {
+    const merged = { ...hakeemBargainSettings, ...settings, updatedAt: new Date().toISOString() };
+    setHakeemBargainSettings(merged);
+    try {
+      const clean = cleanForCreate(merged);
+      await setDoc(doc(db, 'settings', 'hakeemBargain'), clean, { merge: true });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'settings/hakeemBargain');
+      throw err;
+    }
+  };
+
+  const applyCoupon = (code: string): boolean => {
+    const cleanCode = code.trim().toUpperCase();
+    if (!cleanCode) return false;
+
+    // Check spin wheel slices
+    const slice = spinWheelSettings.slices.find((s) => s.couponCode.toUpperCase() === cleanCode);
+    if (slice) {
+      const couponObj = {
+        code: cleanCode,
+        discountPercent: slice.type === 'discount_percent' ? slice.value : undefined,
+        discountAmount: slice.type === 'discount_fixed' ? slice.value : undefined,
+        freeShipping: slice.type === 'free_shipping' ? true : undefined,
+        freeGift: slice.type === 'free_gift' ? slice.label : undefined,
+      };
+      setAppliedCoupon(couponObj);
+      try {
+        localStorage.setItem('faraabee_applied_coupon', JSON.stringify(couponObj));
+      } catch {}
+      return true;
+    }
+
+    // Check Hakeem Bargain prefix or format (e.g. HAKEEM-OFFER-15 or HAKEEM-15)
+    if (cleanCode.startsWith('HAKEEM')) {
+      const parts = cleanCode.split('-');
+      const lastPart = parts[parts.length - 1];
+      const parsedNum = Number(lastPart);
+      const discountPercent = !isNaN(parsedNum) && parsedNum > 0 ? parsedNum : hakeemBargainSettings.counterOfferDiscountPercent;
+      const couponObj = {
+        code: cleanCode,
+        discountPercent,
+      };
+      setAppliedCoupon(couponObj);
+      try {
+        localStorage.setItem('faraabee_applied_coupon', JSON.stringify(couponObj));
+      } catch {}
+      return true;
+    }
+
+    // Standard fallback coupons
+    if (cleanCode === 'SHIFA10' || cleanCode === 'FARABI10') {
+      const couponObj = { code: cleanCode, discountPercent: 10 };
+      setAppliedCoupon(couponObj);
+      try {
+        localStorage.setItem('faraabee_applied_coupon', JSON.stringify(couponObj));
+      } catch {}
+      return true;
+    }
+
+    if (cleanCode === 'SUPER15' || cleanCode === 'BARKAT15') {
+      const couponObj = { code: cleanCode, discountPercent: 15 };
+      setAppliedCoupon(couponObj);
+      try {
+        localStorage.setItem('faraabee_applied_coupon', JSON.stringify(couponObj));
+      } catch {}
+      return true;
+    }
+
+    if (cleanCode === 'FREESHIP') {
+      const couponObj = { code: cleanCode, freeShipping: true };
+      setAppliedCoupon(couponObj);
+      try {
+        localStorage.setItem('faraabee_applied_coupon', JSON.stringify(couponObj));
+      } catch {}
+      return true;
+    }
+
+    return false;
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    try {
+      localStorage.removeItem('faraabee_applied_coupon');
+    } catch {}
+  };
+
   // 7. Subscribe to Reviews, Bundles, Hikmat Cards
   useEffect(() => {
     const unsubReviews = onSnapshot(
@@ -1120,10 +1333,20 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         contactInfo,
         deliverySettings,
         updateDeliverySettings,
+        paymentSettings,
+        updatePaymentSettings,
+        spinWheelSettings,
+        updateSpinWheelSettings,
+        hakeemBargainSettings,
+        updateHakeemBargainSettings,
+        appliedCoupon,
+        applyCoupon,
+        removeCoupon,
         activeCurrency,
         setActiveCurrency,
         language,
         setLanguage,
+        t: translations[language],
         reviews,
         addReview,
         deleteReview,
