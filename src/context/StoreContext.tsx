@@ -34,12 +34,25 @@ import {
   SpinWheelSettings,
   HakeemBargainSettings,
   WheelSlice,
+  DeveloperSignatureSettings,
 } from '../types';
 import { DEFAULT_PAYMENT_SETTINGS } from '../config/defaultPayment';
 import {
   DEFAULT_SPIN_WHEEL_SETTINGS,
   DEFAULT_HAKEEM_BARGAIN_SETTINGS,
 } from '../config/defaultFunFeatures';
+
+export const fallbackDeveloperSignatureSettings: DeveloperSignatureSettings = {
+  enabled: true,
+  signatureImage: '',
+  customText: 'This website was created by me. If you want your own custom website, contact:',
+  customTextUrdu: 'یہ ویب سائٹ میرے ہاتھوں سے تیار کی گئی ہے۔ اگر آپ اپنی مرضی کی ویب سائٹ بنوانا چاہتے ہیں تو رابطہ کریں:',
+  email: 'faraabee@gmail.com',
+  creatorName: 'Farabi Web Studio',
+  badgeTitle: 'Website Creator & Designer',
+  penColor: '#D4AF37',
+  updatedAt: new Date().toISOString(),
+};
 import { products as fallbackProducts } from '../data/products';
 import { fallbackSpiritualPosts, fallbackSpiritualSettings } from '../data/spiritual';
 import {
@@ -134,6 +147,9 @@ interface StoreContextType {
   updateSpinWheelSettings: (updates: Partial<SpinWheelSettings>) => Promise<void>;
   hakeemBargainSettings: HakeemBargainSettings;
   updateHakeemBargainSettings: (updates: Partial<HakeemBargainSettings>) => Promise<void>;
+  // Website Creator / Developer Attribution Signature
+  developerSignatureSettings: DeveloperSignatureSettings;
+  updateDeveloperSignatureSettings: (updates: Partial<DeveloperSignatureSettings>) => Promise<void>;
   appliedCoupon: {
     code: string;
     discountPercent?: number;
@@ -210,6 +226,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(DEFAULT_PAYMENT_SETTINGS);
   const [spinWheelSettings, setSpinWheelSettings] = useState<SpinWheelSettings>(DEFAULT_SPIN_WHEEL_SETTINGS);
   const [hakeemBargainSettings, setHakeemBargainSettings] = useState<HakeemBargainSettings>(DEFAULT_HAKEEM_BARGAIN_SETTINGS);
+  const [developerSignatureSettings, setDeveloperSignatureSettings] = useState<DeveloperSignatureSettings>(() => {
+    try {
+      const saved = localStorage.getItem('farabi_dev_sig_settings');
+      return saved ? JSON.parse(saved) : fallbackDeveloperSignatureSettings;
+    } catch {
+      return fallbackDeveloperSignatureSettings;
+    }
+  });
   const [appliedCoupon, setAppliedCoupon] = useState<{
     code: string;
     discountPercent?: number;
@@ -439,6 +463,23 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       (err) => console.warn('Could not read hakeem bargain settings:', err.message)
     );
 
+    const unsubDeveloperSignature = onSnapshot(
+      doc(db, 'settings', 'developerSignature'),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const remote = docSnap.data() as DeveloperSignatureSettings;
+          setDeveloperSignatureSettings((prev) => {
+            const next = { ...prev, ...remote };
+            try {
+              localStorage.setItem('farabi_dev_sig_settings', JSON.stringify(next));
+            } catch {}
+            return next;
+          });
+        }
+      },
+      (err) => console.warn('Could not read developer signature settings:', err.message)
+    );
+
     return () => {
       unsubSocials();
       unsubContact();
@@ -446,6 +487,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       unsubPayment();
       unsubSpinWheel();
       unsubHakeemBargain();
+      unsubDeveloperSignature();
     };
   }, []);
 
@@ -1044,6 +1086,21 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const updateDeveloperSignatureSettings = async (settings: Partial<DeveloperSignatureSettings>) => {
+    const merged = { ...developerSignatureSettings, ...settings, updatedAt: new Date().toISOString() };
+    setDeveloperSignatureSettings(merged);
+    try {
+      localStorage.setItem('farabi_dev_sig_settings', JSON.stringify(merged));
+    } catch {}
+    try {
+      const clean = cleanForCreate(merged);
+      await setDoc(doc(db, 'settings', 'developerSignature'), clean, { merge: true });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'settings/developerSignature');
+      throw err;
+    }
+  };
+
   const applyCoupon = (code: string): boolean => {
     const cleanCode = code.trim().toUpperCase();
     if (!cleanCode) return false;
@@ -1339,6 +1396,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateSpinWheelSettings,
         hakeemBargainSettings,
         updateHakeemBargainSettings,
+        developerSignatureSettings,
+        updateDeveloperSignatureSettings,
         appliedCoupon,
         applyCoupon,
         removeCoupon,

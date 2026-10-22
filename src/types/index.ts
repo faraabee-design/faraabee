@@ -374,3 +374,16 @@ export interface HakeemBargainSettings {
   };
   updatedAt?: string;
 }
+
+export interface DeveloperSignatureSettings {
+  enabled: boolean;
+  signatureImage: string; // Base64 PNG data URL of drawn signature
+  customText: string;     // e.g. "This website was created by me. If you want your own custom website, contact:"
+  customTextUrdu?: string;// Urdu version
+  email: string;          // Creator contact email
+  creatorName?: string;   // Optional Creator name / signature title
+  badgeTitle?: string;    // Optional badge label
+  penColor?: string;      // Ink color on signature pad
+  updatedAt?: string;
+}
+

@@ -17,6 +17,7 @@ import { AdminBundles } from './AdminBundles';
 import { AdminReviews } from './AdminReviews';
 import { AdminFeatures } from './AdminFeatures';
 import { AdminGamification } from './AdminGamification';
+import { AdminDeveloperSignature } from './AdminDeveloperSignature';
 import {
   LayoutDashboard,
   Package,
@@ -37,6 +38,7 @@ import {
   Star,
   BookOpen,
   Gift,
+  PenTool,
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -59,6 +61,7 @@ type TabType =
   | 'security'
   | 'socials'
   | 'gamification'
+  | 'attribution'
   | 'settings';
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, onPreviewProduct }) => {
@@ -94,6 +97,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, o
     { id: 'orders' as TabType, label: 'Orders', icon: ShoppingBag },
     { id: 'security' as TabType, label: 'Security & Lockouts', icon: ShieldAlert },
     { id: 'socials' as TabType, label: 'Socials & Contact', icon: Share2 },
+    { id: 'attribution' as TabType, label: 'Creator Signature', icon: PenTool },
     { id: 'gamification' as TabType, label: 'Wheel & Bargain', icon: Gift },
     { id: 'settings' as TabType, label: 'Store Settings', icon: Sliders },
   ];
@@ -299,6 +303,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, o
 
         {activeTab === 'socials' && (
           <AdminSocialsSettings onNotify={showNotification} />
+        )}
+
+        {activeTab === 'attribution' && (
+          <AdminDeveloperSignature />
         )}
 
         {activeTab === 'gamification' && (

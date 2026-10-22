@@ -3,7 +3,7 @@ import { FarabiLogo } from './FarabiLogo';
 import { PageId } from '../types';
 import { useStore } from '../context/StoreContext';
 import { useCustomization, DynamicText } from '../context/CustomizationContext';
-import { Mail, Phone, MapPin, Send, Check, MessageCircle, Globe } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, Check, MessageCircle, Globe, Sparkles } from 'lucide-react';
 
 interface FooterProps {
   onNavigate: (page: PageId) => void;
@@ -55,7 +55,8 @@ const PinterestIcon: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
-  const { socialLinks, contactInfo } = useStore();
+  const { socialLinks, contactInfo, language, developerSignatureSettings } = useStore();
+  const isUrdu = language === 'ur';
   const { theme } = useCustomization();
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
@@ -305,6 +306,58 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 <p className="text-[11px] text-[#AFC7A5] mt-1.5 font-medium">
                   Thank you. You are now subscribed to FARAABEE Journal.
                 </p>
+              )}
+
+              {/* Creator Signature & Attribution Badge */}
+              {developerSignatureSettings?.enabled && (
+                <div className="mt-4 pt-3.5 border-t border-white/10 space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-wider flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-[#D4AF37]" />
+                      <span>{developerSignatureSettings.badgeTitle || (isUrdu ? 'ویب سائٹ ڈیزائنر' : 'Website Creator')}</span>
+                    </span>
+                    {developerSignatureSettings.creatorName && (
+                      <span className="text-[10px] text-[#FAF9F3]/60 font-mono">
+                        {developerSignatureSettings.creatorName}
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-[11px] sm:text-xs text-[#FAF9F3]/85 leading-relaxed font-sans">
+                    {isUrdu && developerSignatureSettings.customTextUrdu
+                      ? developerSignatureSettings.customTextUrdu
+                      : (developerSignatureSettings.customText || 'This website was created by me. If you want your own custom website, contact:')}
+                  </p>
+
+                  <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
+                    {/* Drawn handwritten signature */}
+                    {developerSignatureSettings.signatureImage ? (
+                      <div className="bg-black/25 rounded-xl px-2.5 py-1.5 border border-white/10 flex items-center max-w-[190px]">
+                        <img
+                          src={developerSignatureSettings.signatureImage}
+                          alt="Creator Signature"
+                          className="max-h-12 w-auto object-contain filter drop-shadow-sm"
+                        />
+                      </div>
+                    ) : (
+                      <div className="text-[11px] font-serif italic text-[#D4AF37]/90 tracking-wide bg-black/20 px-2 py-1 rounded-lg border border-white/10">
+                        ✍️ Farabi Studio
+                      </div>
+                    )}
+
+                    {/* Email Contact Link */}
+                    {developerSignatureSettings.email && (
+                      <a
+                        href={`mailto:${developerSignatureSettings.email}?subject=Custom%20Website%20Inquiry`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF9F3] hover:bg-white text-[#183F32] text-[11px] font-bold transition-all shadow-sm hover:scale-102 shrink-0 group cursor-pointer"
+                        title={developerSignatureSettings.email}
+                      >
+                        <Mail className="w-3 h-3 text-[#183F32] group-hover:text-emerald-700" />
+                        <span className="truncate max-w-[140px]">{developerSignatureSettings.email}</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
 
