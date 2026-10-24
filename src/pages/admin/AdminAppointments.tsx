@@ -39,6 +39,7 @@ export const AdminAppointments: React.FC<AdminAppointmentsProps> = ({ onNotify }
     updateAppointmentStatus,
     deleteAppointment,
     updateAppointmentConfig,
+    refreshAppointments,
     language,
     contactInfo,
   } = useStore();
@@ -48,6 +49,7 @@ export const AdminAppointments: React.FC<AdminAppointmentsProps> = ({ onNotify }
   const [activeTab, setActiveTab] = useState<'appointments' | 'timeline_settings'>('appointments');
   const [statusFilter, setStatusFilter] = useState<'all' | AppointmentStatus>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Selected appointment modal for scheduling / review
   const [schedulingAppointment, setSchedulingAppointment] = useState<SpiritualAppointment | null>(null);
@@ -189,38 +191,55 @@ ${apt.adminNotes ? `🌿 *حکیم صاحب کی خصوصی ہدایات:*\n${ap
             </p>
           </div>
 
-          {/* Quick Master Intake Toggle */}
-          <div className="bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/20 flex items-center gap-3 shrink-0">
-            <div className="text-right">
-              <span className="block text-xs font-bold text-white">
-                {timelineSettings.acceptingAppointments
-                  ? isUrdu
-                    ? 'مشاورت کھلی ہے'
-                    : 'Intake OPEN'
-                  : isUrdu
-                  ? 'مشاورت موقوف ہے'
-                  : 'Intake PAUSED'}
-              </span>
-              <span className="block text-[10px] text-[#AFC7A5]">
-                {timelineSettings.acceptingAppointments
-                  ? 'Patients can request'
-                  : 'Closed notice showing'}
-              </span>
+          {/* Quick Master Intake Toggle & Cloud Sync */}
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={async () => {
+                setIsRefreshing(true);
+                await refreshAppointments();
+                setTimeout(() => setIsRefreshing(false), 500);
+                onNotify?.('Synced latest appointments from cloud database');
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl text-xs font-semibold border border-white/20 transition-all cursor-pointer shadow-xs active:scale-95"
+              title="Refresh from cloud database"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-[#AFC7A5] ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span>Sync Cloud</span>
+            </button>
+
+            <div className="bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/20 flex items-center gap-3">
+              <div className="text-right">
+                <span className="block text-xs font-bold text-white">
+                  {timelineSettings.acceptingAppointments
+                    ? isUrdu
+                      ? 'مشاورت کھلی ہے'
+                      : 'Intake OPEN'
+                    : isUrdu
+                    ? 'مشاورت موقوف ہے'
+                    : 'Intake PAUSED'}
+                </span>
+                <span className="block text-[10px] text-[#AFC7A5]">
+                  {timelineSettings.acceptingAppointments
+                    ? 'Patients can request'
+                    : 'Closed notice showing'}
+                </span>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={timelineSettings.acceptingAppointments}
+                  onChange={async (e) => {
+                    const val = e.target.checked;
+                    setTimelineSettings((prev) => ({ ...prev, acceptingAppointments: val }));
+                    await updateAppointmentConfig({ acceptingAppointments: val });
+                    onNotify?.(val ? 'Intake opened for visitors' : 'Intake paused for visitors');
+                  }}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+              </label>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={timelineSettings.acceptingAppointments}
-                onChange={async (e) => {
-                  const val = e.target.checked;
-                  setTimelineSettings((prev) => ({ ...prev, acceptingAppointments: val }));
-                  await updateAppointmentConfig({ acceptingAppointments: val });
-                  onNotify?.(val ? 'Intake opened for visitors' : 'Intake paused for visitors');
-                }}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-            </label>
           </div>
         </div>
 

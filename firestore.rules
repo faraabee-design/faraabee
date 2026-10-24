@@ -146,7 +146,9 @@ service cloud.firestore {
     match /appointments/{appointmentId} {
       allow create: if isValidId(appointmentId) && isValidAppointment(incoming());
       allow get: if isValidId(appointmentId);
-      allow list, update, delete: if isAdmin() && isValidId(appointmentId);
+      allow list: if isAdmin();
+      allow update: if isAdmin() && isValidId(appointmentId) && isValidAppointment(incoming());
+      allow delete: if isAdmin() && isValidId(appointmentId);
     }
   }
 }

@@ -238,6 +238,7 @@ interface StoreContextType {
   ) => Promise<void>;
   deleteAppointment: (id: string) => Promise<void>;
   updateAppointmentConfig: (updates: Partial<AppointmentSlotConfig>) => Promise<void>;
+  refreshAppointments: () => Promise<void>;
   appliedCoupon: {
     code: string;
     discountPercent?: number;
@@ -302,14 +303,63 @@ const DEFAULT_DELIVERY_SETTINGS: DeliverySettings = {
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAdmin } = useAuth();
-  const [products, setProducts] = useState<Product[]>(fallbackProducts);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [products, setProducts] = useState<Product[]>(() => {
+    try {
+      const saved = localStorage.getItem('farabi_cached_products');
+      return saved ? JSON.parse(saved) : fallbackProducts;
+    } catch {
+      return fallbackProducts;
+    }
+  });
+  const [categories, setCategories] = useState<Category[]>(() => {
+    try {
+      const saved = localStorage.getItem('farabi_cached_categories');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [promotions, setPromotions] = useState<Promotion[]>(() => {
+    try {
+      const saved = localStorage.getItem('farabi_cached_promotions');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [orders, setOrders] = useState<Order[]>([]);
-  const [spiritualPosts, setSpiritualPosts] = useState<SpiritualPost[]>(fallbackSpiritualPosts);
-  const [spiritualSettings, setSpiritualSettings] = useState<SpiritualSettings>(fallbackSpiritualSettings);
-  const [socialLinks, setSocialLinks] = useState<SocialLinks>(siteConfig.social);
-  const [contactInfo, setContactInfo] = useState<typeof siteConfig.contact>(siteConfig.contact);
+  const [spiritualPosts, setSpiritualPosts] = useState<SpiritualPost[]>(() => {
+    try {
+      const saved = localStorage.getItem('farabi_cached_spiritual_posts');
+      return saved ? JSON.parse(saved) : fallbackSpiritualPosts;
+    } catch {
+      return fallbackSpiritualPosts;
+    }
+  });
+  const [spiritualSettings, setSpiritualSettings] = useState<SpiritualSettings>(() => {
+    try {
+      const saved = localStorage.getItem('farabi_cached_spiritual_settings');
+      return saved ? { ...fallbackSpiritualSettings, ...JSON.parse(saved) } : fallbackSpiritualSettings;
+    } catch {
+      return fallbackSpiritualSettings;
+    }
+  });
+  const [socialLinks, setSocialLinks] = useState<SocialLinks>(() => {
+    try {
+      const saved = localStorage.getItem('farabi_cached_socials');
+      return saved ? { ...siteConfig.social, ...JSON.parse(saved) } : siteConfig.social;
+    } catch {
+      return siteConfig.social;
+    }
+  });
+  const [contactInfo, setContactInfo] = useState<typeof siteConfig.contact>(() => {
+    try {
+      const saved = localStorage.getItem('farabi_cached_contact');
+      return saved ? { ...siteConfig.contact, ...JSON.parse(saved) } : siteConfig.contact;
+    } catch {
+      return siteConfig.contact;
+    }
+  });
   const [deliverySettings, setDeliverySettings] = useState<DeliverySettings>(DEFAULT_DELIVERY_SETTINGS);
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(DEFAULT_PAYMENT_SETTINGS);
   const [spinWheelSettings, setSpinWheelSettings] = useState<SpinWheelSettings>(DEFAULT_SPIN_WHEEL_SETTINGS);
@@ -325,9 +375,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [appointments, setAppointments] = useState<SpiritualAppointment[]>(() => {
     try {
       const saved = localStorage.getItem('farabi_cached_appointments');
-      return saved ? JSON.parse(saved) : fallbackAppointments;
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return fallbackAppointments;
+      return [];
     }
   });
   const [appointmentConfig, setAppointmentConfig] = useState<AppointmentSlotConfig>(() => {
@@ -414,6 +464,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           // Sort by displayOrder or fallback
           loaded.sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
           setProducts(loaded);
+          try {
+            localStorage.setItem('farabi_cached_products', JSON.stringify(loaded));
+          } catch {}
         } else if (isAdmin) {
           // Empty in Firestore -> seed initial data if admin
           seedInitialProducts();
@@ -444,6 +497,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           });
           loaded.sort((a, b) => a.displayOrder - b.displayOrder);
           setCategories(loaded);
+          try {
+            localStorage.setItem('farabi_cached_categories', JSON.stringify(loaded));
+          } catch {}
         } else if (isAdmin) {
           seedInitialCategories();
         }
@@ -469,6 +525,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           } as Promotion);
         });
         setPromotions(loaded);
+        try {
+          localStorage.setItem('farabi_cached_promotions', JSON.stringify(loaded));
+        } catch {}
       },
       (error) => {
         console.warn('Could not read promotions:', error.message);
@@ -513,20 +572,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const unsub = onSnapshot(
       collection(db, 'appointments'),
       (snapshot) => {
-        if (!snapshot.empty) {
-          const loaded: SpiritualAppointment[] = [];
-          snapshot.forEach((docSnap) => {
-            loaded.push({
-              id: docSnap.id,
-              ...docSnap.data(),
-            } as SpiritualAppointment);
-          });
-          loaded.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-          setAppointments(loaded);
-          try {
-            localStorage.setItem('farabi_cached_appointments', JSON.stringify(loaded));
-          } catch {}
-        }
+        const loaded: SpiritualAppointment[] = [];
+        snapshot.forEach((docSnap) => {
+          loaded.push({
+            id: docSnap.id,
+            ...docSnap.data(),
+          } as SpiritualAppointment);
+        });
+        loaded.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setAppointments(loaded);
+        try {
+          localStorage.setItem('farabi_cached_appointments', JSON.stringify(loaded));
+        } catch {}
       },
       (error) => {
         console.warn('Could not read appointments from Firestore:', error.message);
@@ -659,6 +716,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           });
           loaded.sort((a, b) => (a.displayOrder ?? 99) - (b.displayOrder ?? 99));
           setSpiritualPosts(loaded);
+          try {
+            localStorage.setItem('farabi_cached_spiritual_posts', JSON.stringify(loaded));
+          } catch {}
         } else if (isAdmin) {
           seedInitialSpiritual();
         }
@@ -670,7 +730,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       doc(db, 'settings', 'spiritual'),
       (docSnap) => {
         if (docSnap.exists()) {
-          setSpiritualSettings((prev) => ({ ...prev, ...(docSnap.data() as SpiritualSettings) }));
+          setSpiritualSettings((prev) => {
+            const next = { ...prev, ...(docSnap.data() as SpiritualSettings) };
+            try {
+              localStorage.setItem('farabi_cached_spiritual_settings', JSON.stringify(next));
+            } catch {}
+            return next;
+          });
         }
       },
       (err) => console.warn('Could not read spiritual settings:', err.message)
@@ -1259,11 +1325,23 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const randomDigits = Math.floor(10000 + Math.random() * 90000);
     const referenceId = `APT-${randomDigits}`;
     const newId = `apt-${Date.now()}`;
+
+    // Safeguard Firestore 1MB document limit: Base64 audio can be at most 600KB
+    let safeAudioUrl = data.audioRecordingUrl;
+    let description = data.problemDescription || '';
+    if (safeAudioUrl && safeAudioUrl.length > 700000) {
+      console.warn('Audio data size is close to Firestore 1MB limit. Storing note for WhatsApp fast-track.');
+      description = (description ? description + '\n' : '') + '[Patient recorded voice note on device - fast track via WhatsApp]';
+      safeAudioUrl = undefined;
+    }
+
     const fullData: SpiritualAppointment = {
       ...data,
       id: newId,
       referenceId: data.referenceId || referenceId,
       status: data.status || 'pending',
+      problemDescription: description,
+      audioRecordingUrl: safeAudioUrl,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -1277,9 +1355,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       const clean = cleanForCreate(fullData);
       await setDoc(doc(db, 'appointments', newId), clean);
+      console.log('Spiritual appointment successfully saved to Firestore:', newId);
       return newId;
     } catch (err) {
-      console.warn('Could not save appointment to Firestore, persisted locally:', err);
+      console.error('Error saving appointment to Firestore:', err);
       return newId;
     }
   };
@@ -1345,6 +1424,27 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       await setDoc(doc(db, 'settings', 'appointmentConfig'), clean, { merge: true });
     } catch (err) {
       console.warn('Could not save appointment config to Firestore, saved locally:', err);
+    }
+  };
+
+  const refreshAppointments = async () => {
+    try {
+      const snap = await getDocs(collection(db, 'appointments'));
+      const loaded: SpiritualAppointment[] = [];
+      snap.forEach((docSnap) => {
+        loaded.push({
+          id: docSnap.id,
+          ...docSnap.data(),
+        } as SpiritualAppointment);
+      });
+      loaded.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setAppointments(loaded);
+      try {
+        localStorage.setItem('farabi_cached_appointments', JSON.stringify(loaded));
+      } catch {}
+      console.log('Refreshed appointments from cloud, total:', loaded.length);
+    } catch (err) {
+      console.error('Error refreshing appointments from Firestore:', err);
     }
   };
 
@@ -1651,6 +1751,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateAppointmentStatus,
         deleteAppointment,
         updateAppointmentConfig,
+        refreshAppointments,
         appliedCoupon,
         applyCoupon,
         removeCoupon,

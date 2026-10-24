@@ -34,8 +34,23 @@ interface CustomizationContextType {
 const CustomizationContext = createContext<CustomizationContextType | undefined>(undefined);
 
 export const CustomizationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<SiteTheme>(DEFAULT_THEME);
-  const [content, setContent] = useState<SiteCopyContent>(DEFAULT_CONTENT);
+  const [theme, setTheme] = useState<SiteTheme>(() => {
+    try {
+      const saved = localStorage.getItem('farabi_cached_theme');
+      return saved ? { ...DEFAULT_THEME, ...JSON.parse(saved) } : DEFAULT_THEME;
+    } catch {
+      return DEFAULT_THEME;
+    }
+  });
+
+  const [content, setContent] = useState<SiteCopyContent>(() => {
+    try {
+      const saved = localStorage.getItem('farabi_cached_content');
+      return saved ? { ...DEFAULT_CONTENT, ...JSON.parse(saved) } : DEFAULT_CONTENT;
+    } catch {
+      return DEFAULT_CONTENT;
+    }
+  });
 
   // 1. Listen to real-time Theme customizations from Firestore
   useEffect(() => {
@@ -44,7 +59,13 @@ export const CustomizationProvider: React.FC<{ children: React.ReactNode }> = ({
       (docSnap) => {
         if (docSnap.exists()) {
           const remote = docSnap.data() as Partial<SiteTheme>;
-          setTheme((prev) => ({ ...prev, ...remote }));
+          setTheme((prev) => {
+            const next = { ...prev, ...remote };
+            try {
+              localStorage.setItem('farabi_cached_theme', JSON.stringify(next));
+            } catch {}
+            return next;
+          });
         }
       },
       (err) => console.warn('Could not read remote theme settings:', err.message)
@@ -68,6 +89,9 @@ export const CustomizationProvider: React.FC<{ children: React.ReactNode }> = ({
                 merged[k] = { ...merged[k], ...v };
               }
             }
+            try {
+              localStorage.setItem('farabi_cached_content', JSON.stringify(merged));
+            } catch {}
             return merged;
           });
         }

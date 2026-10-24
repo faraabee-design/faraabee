@@ -6,11 +6,11 @@ import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Configure Firestore with long-polling fallback to prevent WebSocket / stream dropouts in iframe and proxy environments
+// Configure Firestore with immediate long-polling to prevent WebSocket handshake timeouts in Cloud Run & iframe proxy environments
 let firestoreInstance;
 try {
   firestoreInstance = initializeFirestore(app, {
-    experimentalAutoDetectLongPolling: true,
+    experimentalForceLongPolling: true,
     ignoreUndefinedProperties: true,
   }, firebaseConfig.firestoreDatabaseId);
 } catch {

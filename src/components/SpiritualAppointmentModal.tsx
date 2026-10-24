@@ -103,13 +103,40 @@ export const SpiritualAppointmentModal: React.FC<SpiritualAppointmentModalProps>
 
   if (!isOpen) return null;
 
-  // Audio recording handlers using standard MediaRecorder API
+  // Audio recording handlers using standard MediaRecorder API with mobile phone optimization
   const startRecording = async () => {
     setMicPermissionError(null);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1, // Mono channel to optimize file size
+          sampleRate: 16000, // Voice telephony sampling
+          echoCancellation: true,
+          noiseSuppression: true,
+        },
+      });
       audioChunksRef.current = [];
-      const recorder = new MediaRecorder(stream);
+
+      const preferredMimes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+        'audio/aac',
+      ];
+      let chosenMime = '';
+      for (const m of preferredMimes) {
+        if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(m)) {
+          chosenMime = m;
+          break;
+        }
+      }
+
+      const recorderOptions: MediaRecorderOptions = {
+        audioBitsPerSecond: 16000,
+      };
+      if (chosenMime) recorderOptions.mimeType = chosenMime;
+
+      const recorder = new MediaRecorder(stream, recorderOptions);
       mediaRecorderRef.current = recorder;
 
       recorder.ondataavailable = (e) => {
@@ -119,7 +146,7 @@ export const SpiritualAppointmentModal: React.FC<SpiritualAppointmentModalProps>
       };
 
       recorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const audioBlob = new Blob(audioChunksRef.current, { type: chosenMime || 'audio/webm' });
         const reader = new FileReader();
         reader.onloadend = () => {
           setAudioUrl(reader.result as string);
@@ -136,8 +163,8 @@ export const SpiritualAppointmentModal: React.FC<SpiritualAppointmentModalProps>
 
       timerIntervalRef.current = setInterval(() => {
         setRecordingDuration((prev) => {
-          if (prev >= 180) {
-            // Auto stop at 3 minutes
+          if (prev >= 45) {
+            // Auto stop at 45 seconds (optimized for phone data & voice intake)
             stopRecording();
             return prev;
           }
