@@ -29,7 +29,7 @@ import { Product, CartItem, Article, PageId } from './types';
 
 function MainApp() {
   const { products, loading } = useStore();
-  const { isAdmin, isAuthReady } = useAuth();
+  const { isAdmin, isAuthReady, logout } = useAuth();
   const { theme } = useCustomization();
 
   const [currentPage, setCurrentPage] = useState<PageId>('home');
@@ -180,7 +180,10 @@ function MainApp() {
     if (isAdmin) {
       return (
         <AdminDashboard
-          onBackToStore={() => handleNavigate('home')}
+          onBackToStore={async () => {
+            await logout();
+            handleNavigate('home');
+          }}
           onPreviewProduct={(slug) => handleNavigate('product-detail', slug)}
         />
       );

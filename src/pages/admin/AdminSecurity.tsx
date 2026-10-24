@@ -90,37 +90,49 @@ export const AdminSecurity: React.FC<AdminSecurityProps> = ({ onNotify }) => {
       </div>
 
       {/* Security Policies Overview Card */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Security Policies Overview Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="p-4 bg-white rounded-2xl border border-emerald-200 shadow-2xs space-y-1 bg-gradient-to-b from-emerald-50/40 to-white">
+          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800 uppercase tracking-wider">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <span>Authorized Account</span>
+          </div>
+          <p className="text-sm font-bold text-[#183F32] truncate">faraabee1@gmail.com</p>
+          <p className="text-xs text-[#26312B]/70">
+            Strict whitelist enforced. All other Google or email accounts are rejected.
+          </p>
+        </div>
+
         <div className="p-4 bg-white rounded-2xl border border-[#AFC7A5]/30 shadow-2xs space-y-1">
           <div className="flex items-center gap-2 text-xs font-semibold text-[#183F32] uppercase tracking-wider">
-            <AlertTriangle className="w-4 h-4 text-amber-600" />
-            <span>Failed Attempt Limit</span>
+            <Laptop className="w-4 h-4 text-[#183F32]" />
+            <span>Single Device Policy</span>
           </div>
-          <p className="text-2xl font-bold text-[#183F32]">3 Tries</p>
+          <p className="text-xl font-bold text-[#183F32]">1 Device Only</p>
           <p className="text-xs text-[#26312B]/70">
-            3 consecutive failed logins trigger immediate 1-minute portal lockdown.
+            Logging in on a second device instantly terminates the previous session.
           </p>
         </div>
 
         <div className="p-4 bg-white rounded-2xl border border-[#AFC7A5]/30 shadow-2xs space-y-1">
           <div className="flex items-center gap-2 text-xs font-semibold text-[#183F32] uppercase tracking-wider">
             <Clock className="w-4 h-4 text-[#183F32]" />
-            <span>Escalating Lockout</span>
+            <span>Session Lifetime</span>
           </div>
-          <p className="text-2xl font-bold text-[#183F32]">+3 Mins</p>
+          <p className="text-xl font-bold text-[#183F32]">Ephemeral</p>
           <p className="text-xs text-[#26312B]/70">
-            Each subsequent failed attempt extends the lockdown by 3 additional minutes.
+            Closing tab or window requires re-entering email and password.
           </p>
         </div>
 
         <div className="p-4 bg-white rounded-2xl border border-[#AFC7A5]/30 shadow-2xs space-y-1">
           <div className="flex items-center gap-2 text-xs font-semibold text-[#183F32] uppercase tracking-wider">
-            <Mail className="w-4 h-4 text-red-600" />
-            <span>Alert Recipient</span>
+            <AlertTriangle className="w-4 h-4 text-amber-600" />
+            <span>Failed Attempt Limit</span>
           </div>
-          <p className="text-sm font-bold text-[#183F32] truncate">faraabee1@gmail.com</p>
+          <p className="text-xl font-bold text-[#183F32]">3 Attempts</p>
           <p className="text-xs text-[#26312B]/70">
-            Automated alerts dispatched directly to this address with device forensics.
+            3 failed tries trigger 1-min lockdown and email alert to faraabee1@gmail.com.
           </p>
         </div>
       </div>

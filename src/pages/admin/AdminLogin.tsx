@@ -24,8 +24,15 @@ const STORAGE_LOCKOUT_KEY = 'faraabee_admin_lockout_until';
 const ALERT_EMAIL = 'faraabee1@gmail.com';
 
 export const AdminLogin: React.FC<AdminLoginProps> = ({ onBackToStore }) => {
-  const { currentUser, isAdmin, loginWithEmail, logout } = useAuth();
-  const [email, setEmail] = useState('');
+  const {
+    currentUser,
+    isAdmin,
+    loginWithEmail,
+    loginWithGoogle,
+    logout,
+    sessionTerminatedNotice,
+  } = useAuth();
+  const [email, setEmail] = useState('faraabee1@gmail.com');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -159,6 +166,11 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onBackToStore }) => {
       return;
     }
 
+    if (email.trim().toLowerCase() !== 'faraabee1@gmail.com') {
+      setError('Access Denied: Only the verified administrator email (faraabee1@gmail.com) is permitted. All other accounts are strictly blocked.');
+      return;
+    }
+
     if (!email || !password) {
       setError('Please enter your administrator credentials.');
       return;
@@ -178,17 +190,20 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onBackToStore }) => {
       setFailedAttempts(0);
       setLockoutUntil(0);
       setRemainingSeconds(0);
-    } catch (err: unknown) {
+    } catch (err: any) {
+      const errMsg = err?.message || 'Invalid administrator credentials.';
       const newAttempts = failedAttempts + 1;
       setFailedAttempts(newAttempts);
       try {
         localStorage.setItem(STORAGE_FAILED_KEY, String(newAttempts));
       } catch {}
 
-      if (newAttempts < 3) {
+      if (errMsg.includes('Access Denied')) {
+        setError(errMsg);
+      } else if (newAttempts < 3) {
         const remainingTries = 3 - newAttempts;
         setError(
-          `Invalid administrator email or password. Attempt ${newAttempts} of 3 (${remainingTries} try remaining before security lockout).`
+          `Invalid administrator password. Attempt ${newAttempts} of 3 (${remainingTries} try remaining before security lockout).`
         );
       } else if (newAttempts === 3) {
         // Exactly 3 failed tries: lock for 1 minute (60s) and send alert
@@ -205,9 +220,6 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onBackToStore }) => {
         );
         dispatchSecurityAlert(newAttempts);
       } else {
-        // Each failed try after the 1-minute timer adds another 3 more minutes
-        // Attempt 4: 1 min + 3 min = 4 min (240s)
-        // Attempt 5: 4 min + 3 min = 7 min (420s)
         const totalDurationSecs = 60 + (newAttempts - 3) * 180;
         const until = Date.now() + totalDurationSecs * 1000;
         setLockoutUntil(until);
@@ -279,6 +291,27 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onBackToStore }) => {
               <input type="text" style={{ display: 'none' }} tabIndex={-1} aria-hidden="true" autoComplete="off" />
               <input type="password" style={{ display: 'none' }} tabIndex={-1} aria-hidden="true" autoComplete="new-password" />
 
+              {/* Session Displaced Notice (Single Device Policy) */}
+              {sessionTerminatedNotice && (
+                <div className="p-4 bg-amber-50 border-2 border-amber-300 rounded-2xl space-y-2 animate-fade-in">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-amber-900 font-bold text-xs">
+                      <Laptop className="w-4 h-4 text-amber-700" />
+                      <span>Single Active Device Policy</span>
+                    </div>
+                    <span className="text-[10px] uppercase font-bold px-2 py-0.5 bg-amber-200 text-amber-900 rounded-md">
+                      Session Closed
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-800 leading-relaxed">
+                    Your previous login session was automatically ended because a newer session was initiated from another device: <strong>{sessionTerminatedNotice.device}</strong>.
+                  </p>
+                  <p className="text-[11px] text-amber-700">
+                    To access the administration portal from this device, please re-enter your credentials below.
+                  </p>
+                </div>
+              )}
+
               {/* Active Lockout Banner with Real-time Countdown */}
               {isLocked ? (
                 <div className="p-4 bg-red-50 border-2 border-red-300 rounded-2xl space-y-3 animate-pulse">
@@ -338,14 +371,19 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onBackToStore }) => {
                 </div>
               )}
 
-              {/* Admin Email Input (Watermark placeholder removed, autofill disabled) */}
+              {/* Admin Email Input */}
               <div>
-                <label
-                  htmlFor="faraabee_admin_identity"
-                  className="block text-xs font-semibold uppercase tracking-wider text-[#183F32] mb-1.5"
-                >
-                  Admin Email
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label
+                    htmlFor="faraabee_admin_identity"
+                    className="block text-xs font-semibold uppercase tracking-wider text-[#183F32]"
+                  >
+                    Admin Email
+                  </label>
+                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                    faraabee1@gmail.com
+                  </span>
+                </div>
                 <div className="relative rounded-xl shadow-xs">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#26312B]/40">
                     <Mail className="h-4 w-4" />
@@ -373,7 +411,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onBackToStore }) => {
                 </div>
               </div>
 
-              {/* Password Input (Placeholder removed, autofill disabled) */}
+              {/* Password Input */}
               <div>
                 <label
                   htmlFor="faraabee_admin_secret"
@@ -408,7 +446,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onBackToStore }) => {
                 </div>
               </div>
 
-              {/* Submit Button (Disables during lockout and shows countdown timer) */}
+              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isLocked || loading}
@@ -427,11 +465,59 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onBackToStore }) => {
                   <span>Verifying Credentials...</span>
                 ) : (
                   <>
-                    <span>Sign In to Dashboard</span>
+                    <span>Sign In with Password</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
+
+              {/* Or Google Sign-In (restricted strictly to faraabee@gmail.com) */}
+              <div className="relative pt-2">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-[#AFC7A5]/30" />
+                </div>
+                <div className="relative flex justify-center text-[10px] uppercase font-bold tracking-wider">
+                  <span className="bg-white px-3 text-[#26312B]/50">Or verified Google account</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  setError(null);
+                  setLoading(true);
+                  try {
+                    await loginWithGoogle();
+                  } catch (err: any) {
+                    setError(err?.message || 'Google authentication rejected');
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={isLocked || loading}
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 border border-[#AFC7A5]/50 hover:border-[#183F32] rounded-xl text-xs font-semibold text-[#183F32] bg-white hover:bg-[#FAF9F3] transition-colors cursor-pointer shadow-2xs disabled:opacity-50"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                </svg>
+                <span>Sign in with Google (faraabee1@gmail.com only)</span>
+              </button>
+
+              {/* Single Device Policy & Instant Logout Information */}
+              <div className="p-3 bg-[#FAF9F3] rounded-xl border border-[#AFC7A5]/30 text-[11px] text-[#26312B]/75 space-y-1">
+                <div className="flex items-center gap-1.5 font-semibold text-[#183F32]">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Single Device & Ephemeral Session Protection</span>
+                </div>
+                <p className="leading-relaxed">
+                  • Only <strong>faraabee1@gmail.com</strong> is authorized to sign in.<br />
+                  • Only 1 active device session is permitted at a time.<br />
+                  • If you close this tab/window (even by accident) or return to store, you must re-enter credentials.
+                </p>
+              </div>
             </form>
           )}
 

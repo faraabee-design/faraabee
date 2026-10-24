@@ -108,6 +108,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, o
     { id: 'settings' as TabType, label: 'Store Settings', icon: Sliders },
   ];
 
+  const handleExitToStore = async () => {
+    await logout();
+    onBackToStore();
+  };
+
   return (
     <div className="min-h-screen bg-[#FAF9F3] flex flex-col md:flex-row text-[#26312B]">
       {/* Mobile Top Header */}
@@ -135,7 +140,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, o
         <div className="p-6">
           <div className="flex items-center justify-between pb-6 border-b border-[#AFC7A5]/20">
             <button
-              onClick={onBackToStore}
+              onClick={handleExitToStore}
               className="text-left group cursor-pointer"
               title="Return to Store"
             >
@@ -208,7 +213,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, o
           </div>
 
           <button
-            onClick={onBackToStore}
+            onClick={handleExitToStore}
             className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-[#183F32] hover:bg-[#E3EBDD]/40 rounded-xl transition-colors cursor-pointer"
           >
             <span className="flex items-center gap-2">
@@ -232,9 +237,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, o
         {/* Top Header Bar for Desktop */}
         <header className="hidden md:flex items-center justify-between pb-6 mb-6 border-b border-[#AFC7A5]/20">
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#183F32]/60">
-              FARABI Botanical Apothecary
-            </span>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#183F32]/60">
+                FARABI Botanical Apothecary
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Single Active Device Secured</span>
+              </span>
+            </div>
             <h1 className="text-2xl font-serif font-bold text-[#183F32] capitalize">
               {activeTab} Management
             </h1>
@@ -242,7 +253,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, o
 
           <div className="flex items-center gap-3">
             <button
-              onClick={onBackToStore}
+              onClick={handleExitToStore}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#183F32] bg-white border border-[#AFC7A5]/40 rounded-xl hover:bg-[#FAF9F3] transition-colors cursor-pointer shadow-2xs"
             >
               <ExternalLink className="w-3.5 h-3.5" />
