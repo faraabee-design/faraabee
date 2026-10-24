@@ -97,7 +97,7 @@ export const AdminSecurity: React.FC<AdminSecurityProps> = ({ onNotify }) => {
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             <span>Authorized Account</span>
           </div>
-          <p className="text-sm font-bold text-[#183F32] truncate">faraabee1@gmail.com</p>
+          <p className="text-sm font-bold text-[#183F32] truncate">faraabee1@gmail.com / faraabee@gmail.com</p>
           <p className="text-xs text-[#26312B]/70">
             Strict whitelist enforced. All other Google or email accounts are rejected.
           </p>

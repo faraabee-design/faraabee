@@ -13,7 +13,14 @@ import {
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 
+export const AUTHORIZED_ADMIN_EMAILS = ['faraabee1@gmail.com', 'faraabee@gmail.com'];
 export const MASTER_ADMIN_EMAIL = 'faraabee1@gmail.com';
+
+export const isAuthorizedAdminEmail = (email: string | null | undefined): boolean => {
+  if (!email) return false;
+  const clean = email.trim().toLowerCase();
+  return AUTHORIZED_ADMIN_EMAILS.includes(clean);
+};
 
 const SESSION_ACTIVE_KEY = 'farabi_admin_session_active';
 const SESSION_ID_KEY = 'farabi_admin_session_id';
@@ -65,8 +72,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (user) {
         const userEmail = (user.email || '').trim().toLowerCase();
 
-        // STRICT SECURITY: Only the master owner email is ever granted access
-        if (userEmail !== MASTER_ADMIN_EMAIL.toLowerCase()) {
+        // STRICT SECURITY: Only the authorized owner accounts are granted access
+        if (!isAuthorizedAdminEmail(userEmail)) {
           console.warn(`Unauthorized login attempt blocked: ${user.email}`);
           await signOut(auth);
           setCurrentUser(null);
@@ -95,7 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             doc(db, 'admins', user.uid),
             {
               uid: user.uid,
-              email: MASTER_ADMIN_EMAIL,
+              email: userEmail,
               role: 'master_admin',
               lastLogin: new Date().toISOString(),
               deviceSummary: getDeviceSummary(),
@@ -156,11 +163,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSessionTerminatedNotice(null);
   };
 
-  // Sign in with Email and Password (strictly restricted to faraabee@gmail.com)
+  // Sign in with Email and Password
   const loginWithEmail = async (email: string, pass: string) => {
     const cleanEmail = email.trim().toLowerCase();
-    if (cleanEmail !== MASTER_ADMIN_EMAIL.toLowerCase()) {
-      throw new Error(`Access Denied: Only the verified owner account (${MASTER_ADMIN_EMAIL}) is permitted to log in. All other accounts are strictly blocked.`);
+    if (!isAuthorizedAdminEmail(cleanEmail)) {
+      throw new Error('Access Denied: Invalid administrator email or password.');
     }
 
     try {
@@ -193,7 +200,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await setDoc(doc(db, 'settings', 'adminActiveSession'), {
         activeSessionId: newSessionId,
-        adminEmail: MASTER_ADMIN_EMAIL,
+        adminEmail: cleanEmail,
         deviceSummary,
         loginTimestamp: new Date().toISOString(),
         lastActiveAt: new Date().toISOString(),
@@ -207,7 +214,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSessionTerminatedNotice(null);
   };
 
-  // Sign in with Google (strictly restricted to faraabee@gmail.com)
+  // Sign in with Google
   const loginWithGoogle = async () => {
     try {
       await setPersistence(auth, browserSessionPersistence);
@@ -216,18 +223,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({
       prompt: 'select_account',
-      login_hint: MASTER_ADMIN_EMAIL,
     });
 
     const result = await signInWithPopup(auth, provider);
     const authedEmail = (result.user.email || '').trim().toLowerCase();
 
-    if (authedEmail !== MASTER_ADMIN_EMAIL.toLowerCase()) {
+    if (!isAuthorizedAdminEmail(authedEmail)) {
       await signOut(auth);
       sessionStorage.removeItem(SESSION_ACTIVE_KEY);
       sessionStorage.removeItem(SESSION_ID_KEY);
       setIsAdmin(false);
-      throw new Error(`Access Denied: Google Account "${result.user.email}" is not authorized. Only the owner account (${MASTER_ADMIN_EMAIL}) can access this portal.`);
+      throw new Error(`Access Denied: Google Account "${result.user.email}" is not authorized.`);
     }
 
     const newSessionId = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -239,7 +245,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await setDoc(doc(db, 'settings', 'adminActiveSession'), {
         activeSessionId: newSessionId,
-        adminEmail: MASTER_ADMIN_EMAIL,
+        adminEmail: authedEmail,
         deviceSummary,
         loginTimestamp: new Date().toISOString(),
         lastActiveAt: new Date().toISOString(),
