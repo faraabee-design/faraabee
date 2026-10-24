@@ -387,3 +387,45 @@ export interface DeveloperSignatureSettings {
   updatedAt?: string;
 }
 
+export type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
+export type ConsultationType = 'voice_recording' | 'written_text' | 'whatsapp_call' | 'phone_call';
+
+export interface SpiritualAppointment {
+  id: string;
+  referenceId: string; // e.g. "APT-84291"
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  city?: string;
+  preferredDate?: string;
+  preferredTimeSlot?: string;
+  consultationType: ConsultationType;
+  category: string;
+  problemDescription?: string;
+  audioRecordingUrl?: string; // Base64 audio/webm or audio/wav
+  audioDurationSeconds?: number;
+  status: AppointmentStatus;
+  adminNotes?: string;
+  scheduledTime?: string; // Confirmed appointment timeline e.g. "2026-10-26T15:30"
+  confirmedSlotLabel?: string; // e.g. "Monday, 27 Oct • 3:30 PM PKT"
+  confirmationNotificationSent?: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface AppointmentSlotConfig {
+  acceptingAppointments: boolean; // Master Open / Closed toggle
+  closedNoticeMessage: string;
+  closedNoticeMessageUrdu: string;
+  consultationWindowStart: string; // e.g. "10:00 AM"
+  consultationWindowEnd: string;   // e.g. "08:00 PM"
+  slotDurationMinutes: number;     // e.g. 30
+  availableDays: string[];         // e.g. ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+  dailySlotsLimit: number;
+  whatsappDeskNumber: string;
+  consultationFeeNotice: string;
+  consultationFeeNoticeUrdu: string;
+  updatedAt?: string;
+}
+
+

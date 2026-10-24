@@ -18,6 +18,7 @@ import { AdminReviews } from './AdminReviews';
 import { AdminFeatures } from './AdminFeatures';
 import { AdminGamification } from './AdminGamification';
 import { AdminDeveloperSignature } from './AdminDeveloperSignature';
+import { AdminAppointments } from './AdminAppointments';
 import {
   LayoutDashboard,
   Package,
@@ -39,6 +40,7 @@ import {
   BookOpen,
   Gift,
   PenTool,
+  CalendarCheck,
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -53,6 +55,7 @@ type TabType =
   | 'categories'
   | 'reviews'
   | 'spiritual'
+  | 'appointments'
   | 'features'
   | 'theme'
   | 'content'
@@ -66,10 +69,12 @@ type TabType =
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, onPreviewProduct }) => {
   const { currentUser, logout } = useAuth();
-  const { orders } = useStore();
+  const { orders, appointments } = useStore();
   const [activeTab, setActiveTab] = useState<TabType>('products');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const pendingAppointmentsCount = appointments.filter((a) => a.status === 'pending').length;
 
   // Settings state (simple persistent preferences)
   const [storeCurrency, setStoreCurrency] = useState('PKR');
@@ -90,6 +95,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, o
     { id: 'categories' as TabType, label: 'Categories', icon: Layers },
     { id: 'reviews' as TabType, label: 'Customer Reviews', icon: Star },
     { id: 'spiritual' as TabType, label: 'Spiritual Sanctuary', icon: Sparkles },
+    { id: 'appointments' as TabType, label: 'Appointments & Timeline', icon: CalendarCheck },
     { id: 'features' as TabType, label: 'Wisdom & Audio', icon: BookOpen },
     { id: 'theme' as TabType, label: 'Colors & Styling', icon: Palette },
     { id: 'content' as TabType, label: 'Live Text & Copy', icon: FileText },
@@ -175,6 +181,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, o
                       }`}
                     >
                       {orders.length}
+                    </span>
+                  )}
+                  {item.id === 'appointments' && pendingAppointmentsCount > 0 && (
+                    <span
+                      className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
+                        isActive ? 'bg-amber-400 text-[#183F32]' : 'bg-amber-100 text-amber-800'
+                      }`}
+                    >
+                      {pendingAppointmentsCount}
                     </span>
                   )}
                 </button>
@@ -275,6 +290,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, o
 
         {activeTab === 'spiritual' && (
           <AdminSpiritual onNotify={showNotification} />
+        )}
+
+        {activeTab === 'appointments' && (
+          <AdminAppointments onNotify={showNotification} />
         )}
 
         {activeTab === 'features' && (

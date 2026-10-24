@@ -134,5 +134,19 @@ service cloud.firestore {
       allow get, list: if true;
       allow create, update, delete: if isAdmin() && isValidId(bundleId);
     }
+
+    // Appointment validation
+    function isValidAppointment(data) {
+      return data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 200 &&
+             data.customerPhone is string && data.customerPhone.size() > 0 && data.customerPhone.size() <= 100 &&
+             (!('status' in data) || data.status in ['pending', 'confirmed', 'completed', 'cancelled']);
+    }
+
+    // Spiritual Appointments Collection
+    match /appointments/{appointmentId} {
+      allow create: if isValidId(appointmentId) && isValidAppointment(incoming());
+      allow get: if isValidId(appointmentId);
+      allow list, update, delete: if isAdmin() && isValidId(appointmentId);
+    }
   }
 }

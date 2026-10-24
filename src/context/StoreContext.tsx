@@ -35,12 +35,86 @@ import {
   HakeemBargainSettings,
   WheelSlice,
   DeveloperSignatureSettings,
+  SpiritualAppointment,
+  AppointmentSlotConfig,
+  AppointmentStatus,
+  ConsultationType,
 } from '../types';
 import { DEFAULT_PAYMENT_SETTINGS } from '../config/defaultPayment';
 import {
   DEFAULT_SPIN_WHEEL_SETTINGS,
   DEFAULT_HAKEEM_BARGAIN_SETTINGS,
 } from '../config/defaultFunFeatures';
+
+export const DEFAULT_APPOINTMENT_CONFIG: AppointmentSlotConfig = {
+  acceptingAppointments: true,
+  closedNoticeMessage: 'Spiritual consultations are currently paused for today while Hakeem Sahib attends existing patients. Please check back tomorrow morning.',
+  closedNoticeMessageUrdu: 'حکیم صاحب فی الوقت مریضوں کے ساتھ مصروف ہیں۔ آج کے مشوروں کے لیے نئے وقت کا انتظار فرمائیں یا کل صبح دوبارہ رجوع فرمائیں۔',
+  consultationWindowStart: '10:00 AM',
+  consultationWindowEnd: '08:00 PM',
+  slotDurationMinutes: 30,
+  availableDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+  dailySlotsLimit: 8,
+  whatsappDeskNumber: '923091655743',
+  consultationFeeNotice: 'Spiritual Hikmat Consultation is provided as a blessing and guidance for our patrons.',
+  consultationFeeNoticeUrdu: 'روحانی و طبی مشورہ برائے شفا و دعا خالصتاً رضائے الٰہی کے لیے حاضر ہے۔',
+  updatedAt: new Date().toISOString(),
+};
+
+export const fallbackAppointments: SpiritualAppointment[] = [
+  {
+    id: 'apt-demo-1',
+    referenceId: 'APT-84291',
+    customerName: 'Tariq Mehmood',
+    customerPhone: '+92 300 1234567',
+    customerEmail: 'tariq.m@example.com',
+    city: 'Lahore',
+    preferredDate: '2026-10-26',
+    preferredTimeSlot: 'Evening (6:00 PM - 8:00 PM)',
+    consultationType: 'voice_recording',
+    category: 'Spiritual Serenity & Anxiety (دل کا سکون و بے چینی)',
+    problemDescription: 'Frequent chest heaviness and sleep restlessness for past 3 weeks. Requesting prophetic botanical oils and ruqyah water guidance.',
+    audioDurationSeconds: 42,
+    status: 'pending',
+    createdAt: '2026-10-23T16:20:00Z',
+  },
+  {
+    id: 'apt-demo-2',
+    referenceId: 'APT-84180',
+    customerName: 'Zainab Bibi',
+    customerPhone: '+92 321 9876543',
+    city: 'Rawalpindi',
+    preferredDate: '2026-10-25',
+    preferredTimeSlot: 'Afternoon (2:00 PM - 5:00 PM)',
+    consultationType: 'written_text',
+    category: 'Ruqyah & Evil Eye (نظر بد و روحانی حفاظت)',
+    problemDescription: 'Severe recurrent migraines after social gatherings. Seeking herbal bath and ruqyah dhikr schedule.',
+    status: 'confirmed',
+    scheduledTime: '2026-10-25T15:00:00Z',
+    confirmedSlotLabel: 'Sunday, 25 Oct • 3:00 PM PKT',
+    adminNotes: 'Assigned 25-minute WhatsApp Voice consultation. Recommended Sidr leaf infusion & Ruqyah track #3.',
+    confirmationNotificationSent: true,
+    createdAt: '2026-10-22T11:15:00Z',
+  },
+  {
+    id: 'apt-demo-3',
+    referenceId: 'APT-83955',
+    customerName: 'Muhammad Salman',
+    customerPhone: '+92 333 5556677',
+    city: 'Karachi',
+    preferredDate: '2026-10-22',
+    preferredTimeSlot: 'Morning (10:00 AM - 1:00 PM)',
+    consultationType: 'whatsapp_call',
+    category: 'Prophetic Diet & Herbs (طب نبوی و غذا)',
+    problemDescription: 'Joint stiffness and sluggish digestion. Inquiring about pure Kalonji oil and Talbina dosage.',
+    status: 'completed',
+    scheduledTime: '2026-10-22T11:00:00Z',
+    confirmedSlotLabel: 'Thursday, 22 Oct • 11:00 AM PKT',
+    adminNotes: 'Prescribed Habba Sawda with mountain wild honey. Patient satisfied with guidance.',
+    confirmationNotificationSent: true,
+    createdAt: '2026-10-21T09:40:00Z',
+  },
+];
 
 export const fallbackDeveloperSignatureSettings: DeveloperSignatureSettings = {
   enabled: true,
@@ -150,6 +224,20 @@ interface StoreContextType {
   // Website Creator / Developer Attribution Signature
   developerSignatureSettings: DeveloperSignatureSettings;
   updateDeveloperSignatureSettings: (updates: Partial<DeveloperSignatureSettings>) => Promise<void>;
+  // Spiritual Appointments & Timeline Consultation
+  appointments: SpiritualAppointment[];
+  appointmentConfig: AppointmentSlotConfig;
+  createAppointment: (data: Omit<SpiritualAppointment, 'id' | 'createdAt'>) => Promise<string>;
+  updateAppointmentStatus: (
+    id: string,
+    status: AppointmentStatus,
+    notes?: string,
+    scheduledTime?: string,
+    confirmedSlotLabel?: string,
+    confirmationNotificationSent?: boolean
+  ) => Promise<void>;
+  deleteAppointment: (id: string) => Promise<void>;
+  updateAppointmentConfig: (updates: Partial<AppointmentSlotConfig>) => Promise<void>;
   appliedCoupon: {
     code: string;
     discountPercent?: number;
@@ -232,6 +320,22 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return saved ? JSON.parse(saved) : fallbackDeveloperSignatureSettings;
     } catch {
       return fallbackDeveloperSignatureSettings;
+    }
+  });
+  const [appointments, setAppointments] = useState<SpiritualAppointment[]>(() => {
+    try {
+      const saved = localStorage.getItem('farabi_cached_appointments');
+      return saved ? JSON.parse(saved) : fallbackAppointments;
+    } catch {
+      return fallbackAppointments;
+    }
+  });
+  const [appointmentConfig, setAppointmentConfig] = useState<AppointmentSlotConfig>(() => {
+    try {
+      const saved = localStorage.getItem('farabi_appointment_config');
+      return saved ? JSON.parse(saved) : DEFAULT_APPOINTMENT_CONFIG;
+    } catch {
+      return DEFAULT_APPOINTMENT_CONFIG;
     }
   });
   const [appliedCoupon, setAppliedCoupon] = useState<{
@@ -401,6 +505,37 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return () => unsub();
   }, [isAdmin]);
 
+  // 4b. Subscribe to Spiritual Appointments (when Admin)
+  useEffect(() => {
+    if (!isAdmin) {
+      return;
+    }
+    const unsub = onSnapshot(
+      collection(db, 'appointments'),
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const loaded: SpiritualAppointment[] = [];
+          snapshot.forEach((docSnap) => {
+            loaded.push({
+              id: docSnap.id,
+              ...docSnap.data(),
+            } as SpiritualAppointment);
+          });
+          loaded.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setAppointments(loaded);
+          try {
+            localStorage.setItem('farabi_cached_appointments', JSON.stringify(loaded));
+          } catch {}
+        }
+      },
+      (error) => {
+        console.warn('Could not read appointments from Firestore:', error.message);
+      }
+    );
+
+    return () => unsub();
+  }, [isAdmin]);
+
   // 5. Subscribe to Social Links & Store Contact Info
   useEffect(() => {
     const unsubSocials = onSnapshot(
@@ -480,6 +615,23 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       (err) => console.warn('Could not read developer signature settings:', err.message)
     );
 
+    const unsubAppointmentConfig = onSnapshot(
+      doc(db, 'settings', 'appointmentConfig'),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const remote = docSnap.data() as AppointmentSlotConfig;
+          setAppointmentConfig((prev) => {
+            const next = { ...prev, ...remote };
+            try {
+              localStorage.setItem('farabi_appointment_config', JSON.stringify(next));
+            } catch {}
+            return next;
+          });
+        }
+      },
+      (err) => console.warn('Could not read appointment config:', err.message)
+    );
+
     return () => {
       unsubSocials();
       unsubContact();
@@ -488,6 +640,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       unsubSpinWheel();
       unsubHakeemBargain();
       unsubDeveloperSignature();
+      unsubAppointmentConfig();
     };
   }, []);
 
@@ -1101,6 +1254,100 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  // Spiritual Consultations & Appointments Actions
+  const createAppointment = async (data: Omit<SpiritualAppointment, 'id' | 'createdAt'>): Promise<string> => {
+    const randomDigits = Math.floor(10000 + Math.random() * 90000);
+    const referenceId = `APT-${randomDigits}`;
+    const newId = `apt-${Date.now()}`;
+    const fullData: SpiritualAppointment = {
+      ...data,
+      id: newId,
+      referenceId: data.referenceId || referenceId,
+      status: data.status || 'pending',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setAppointments((prev) => [fullData, ...prev]);
+    try {
+      const saved = [fullData, ...appointments.filter((a) => a.id !== newId)];
+      localStorage.setItem('farabi_cached_appointments', JSON.stringify(saved));
+    } catch {}
+
+    try {
+      const clean = cleanForCreate(fullData);
+      await setDoc(doc(db, 'appointments', newId), clean);
+      return newId;
+    } catch (err) {
+      console.warn('Could not save appointment to Firestore, persisted locally:', err);
+      return newId;
+    }
+  };
+
+  const updateAppointmentStatus = async (
+    id: string,
+    status: AppointmentStatus,
+    notes?: string,
+    scheduledTime?: string,
+    confirmedSlotLabel?: string,
+    confirmationNotificationSent?: boolean
+  ) => {
+    const updates: Partial<SpiritualAppointment> = {
+      status,
+      updatedAt: new Date().toISOString(),
+    };
+    if (notes !== undefined) updates.adminNotes = notes;
+    if (scheduledTime !== undefined) updates.scheduledTime = scheduledTime;
+    if (confirmedSlotLabel !== undefined) updates.confirmedSlotLabel = confirmedSlotLabel;
+    if (confirmationNotificationSent !== undefined) updates.confirmationNotificationSent = confirmationNotificationSent;
+
+    setAppointments((prev) => {
+      const updated = prev.map((a) => (a.id === id ? { ...a, ...updates } : a));
+      try {
+        localStorage.setItem('farabi_cached_appointments', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    try {
+      const clean = cleanForCreate(updates);
+      await updateDoc(doc(db, 'appointments', id), clean);
+    } catch (err) {
+      console.warn('Could not update appointment in Firestore, updated locally:', err);
+    }
+  };
+
+  const deleteAppointment = async (id: string) => {
+    setAppointments((prev) => {
+      const updated = prev.filter((a) => a.id !== id);
+      try {
+        localStorage.setItem('farabi_cached_appointments', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    try {
+      await deleteDoc(doc(db, 'appointments', id));
+    } catch (err) {
+      console.warn('Could not delete appointment from Firestore, removed locally:', err);
+    }
+  };
+
+  const updateAppointmentConfig = async (settings: Partial<AppointmentSlotConfig>) => {
+    const merged = { ...appointmentConfig, ...settings, updatedAt: new Date().toISOString() };
+    setAppointmentConfig(merged);
+    try {
+      localStorage.setItem('farabi_appointment_config', JSON.stringify(merged));
+    } catch {}
+
+    try {
+      const clean = cleanForCreate(merged);
+      await setDoc(doc(db, 'settings', 'appointmentConfig'), clean, { merge: true });
+    } catch (err) {
+      console.warn('Could not save appointment config to Firestore, saved locally:', err);
+    }
+  };
+
   const applyCoupon = (code: string): boolean => {
     const cleanCode = code.trim().toUpperCase();
     if (!cleanCode) return false;
@@ -1398,6 +1645,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateHakeemBargainSettings,
         developerSignatureSettings,
         updateDeveloperSignatureSettings,
+        appointments,
+        appointmentConfig,
+        createAppointment,
+        updateAppointmentStatus,
+        deleteAppointment,
+        updateAppointmentConfig,
         appliedCoupon,
         applyCoupon,
         removeCoupon,

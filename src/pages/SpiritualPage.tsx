@@ -13,8 +13,12 @@ import {
   ShieldCheck,
   Phone,
   Filter,
+  CalendarCheck,
+  Mic,
+  Clock,
 } from 'lucide-react';
 import { siteConfig } from '../config/siteConfig';
+import { SpiritualAppointmentModal } from '../components/SpiritualAppointmentModal';
 
 interface SpiritualPageProps {
   onNavigateProduct?: (slug: string) => void;
@@ -25,10 +29,13 @@ export const SpiritualPage: React.FC<SpiritualPageProps> = ({
   onNavigateProduct,
   onExploreProducts,
 }) => {
-  const { spiritualPosts, spiritualSettings, contactInfo, products } = useStore();
+  const { spiritualPosts, spiritualSettings, contactInfo, products, appointmentConfig, language } = useStore();
+  const isUrdu = language === 'ur';
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedPost, setSelectedPost] = useState<SpiritualPost | null>(null);
+  const [appointmentModalOpen, setAppointmentModalOpen] = useState(false);
+  const [appointmentCategory, setAppointmentCategory] = useState<string | undefined>(undefined);
 
   // Derive unique categories from active posts
   const categories = Array.from(
@@ -102,22 +109,57 @@ export const SpiritualPage: React.FC<SpiritualPageProps> = ({
 
           {/* Quick Action Button to Consult */}
           <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+            <button
+              onClick={() => {
+                setAppointmentCategory(undefined);
+                setAppointmentModalOpen(true);
+              }}
+              className="inline-flex items-center gap-2.5 px-6 py-3.5 bg-[#183F32] hover:bg-[#285844] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg hover:shadow-xl transition-all cursor-pointer border border-[#AFC7A5]/40 group"
+            >
+              <CalendarCheck className="w-4 h-4 text-[#D4AF37] group-hover:scale-110 transition-transform" />
+              <span>{isUrdu ? 'وقتِ ملاقات حاصل کریں (صوتی / تحریری)' : 'Book Consultation & Appointment'}</span>
+              <Mic className="w-3.5 h-3.5 text-amber-300" />
+            </button>
+
             <a
               href={getGeneralConsultationUrl()}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#183F32] hover:bg-[#285844] text-white text-xs font-semibold uppercase tracking-wider rounded-xl shadow-md transition-all cursor-pointer border border-[#AFC7A5]/40"
+              className="inline-flex items-center gap-2 px-6 py-3.5 bg-white hover:bg-[#FAF9F3] text-[#183F32] text-xs font-bold uppercase tracking-wider rounded-xl border border-[#AFC7A5] hover:border-[#183F32] transition-colors cursor-pointer"
             >
               <MessageCircle className="w-4 h-4 text-[#25D366]" />
               <span>{spiritualSettings.contactButtonText || 'Consult on Spiritual Formulations'}</span>
             </a>
+
             <button
               onClick={onExploreProducts}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-[#FAF9F3] text-[#183F32] text-xs font-semibold uppercase tracking-wider rounded-xl border border-[#AFC7A5] hover:border-[#183F32] transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-6 py-3.5 bg-white hover:bg-[#FAF9F3] text-[#183F32] text-xs font-semibold uppercase tracking-wider rounded-xl border border-[#AFC7A5] hover:border-[#183F32] transition-colors cursor-pointer"
             >
               <span>View Apothecary Products</span>
               <ArrowRight className="w-4 h-4" />
             </button>
+          </div>
+
+          {/* Appointment Intake Highlight Card */}
+          <div className="mt-6 p-5 sm:p-6 bg-white/95 rounded-3xl border border-[#AFC7A5]/40 shadow-sm max-w-2xl mx-auto backdrop-blur-xs space-y-3 text-left sm:text-center">
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-[#AFC7A5]/20">
+              <div className="flex items-center gap-2">
+                <span className={`w-2.5 h-2.5 rounded-full ${appointmentConfig?.acceptingAppointments ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+                <span className="text-[11px] font-bold text-[#183F32] uppercase tracking-wider">
+                  {appointmentConfig?.acceptingAppointments ? 'Intake Open • صوتی و تحریری ملاقات' : 'Intake Scheduled'}
+                </span>
+              </div>
+              <span className="text-[11px] text-[#26312B]/70 font-medium">
+                {appointmentConfig?.acceptingAppointments
+                  ? 'Voice Note or Written Problem'
+                  : (isUrdu ? appointmentConfig?.closedNoticeMessageUrdu : appointmentConfig?.closedNoticeMessage) || 'Limited Daily Slots'}
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-[#26312B]/85 font-serif leading-relaxed">
+              {isUrdu
+                ? 'روحانی سکون و طبِ نبوی مشاورت: بول کر اپنی کیفیت ریکارڈ کروائیں یا تحریر کریں تاکہ باقاعدہ وقتِ ملاقات طے کیا جا سکے۔'
+                : 'Share your condition via a recorded voice message or written details to receive a confirmed consultation timeline with our practitioner.'}
+            </p>
           </div>
         </div>
       </section>
@@ -273,24 +315,40 @@ export const SpiritualPage: React.FC<SpiritualPageProps> = ({
                     </div>
                   </div>
 
-                  {/* Card Footer: Little Contact Button & Actions */}
-                  <div className="p-6 sm:p-8 pt-0 border-t border-[#AFC7A5]/20 mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  {/* Card Footer: Contact & Book Actions */}
+                  <div className="p-6 sm:p-8 pt-0 border-t border-[#AFC7A5]/20 mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                     <span className="text-[11px] text-[#26312B]/60 font-medium">
                       FARAABEE Apothecary Guidance Desk
                     </span>
 
-                    {/* The Little Contact Button */}
-                    <a
-                      href={getWhatsAppInquiryUrl(post)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#183F32] hover:bg-[#285844] text-white text-xs font-bold rounded-xl transition-all shadow-xs hover:shadow cursor-pointer border border-[#AFC7A5]/40"
-                      title="Contact Faraabee on WhatsApp regarding this spiritual remedy"
-                    >
-                      <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" />
-                      <span>{post.contactPrompt || 'Consult on WhatsApp'}</span>
-                      <ExternalLink className="w-3 h-3 opacity-60" />
-                    </a>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAppointmentCategory(post.category);
+                          setAppointmentModalOpen(true);
+                        }}
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-[#E8F1DF]/70 hover:bg-[#E8F1DF] text-[#183F32] text-xs font-bold rounded-xl border border-[#AFC7A5]/50 transition-colors cursor-pointer shadow-2xs"
+                        title="Book dedicated 1-on-1 spiritual consultation slot"
+                      >
+                        <CalendarCheck className="w-3.5 h-3.5 text-[#183F32]" />
+                        <span>Book Appointment</span>
+                        <Mic className="w-3 h-3 text-[#B79A5B]" />
+                      </button>
+
+                      {/* The WhatsApp Inquiry Button */}
+                      <a
+                        href={getWhatsAppInquiryUrl(post)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-3.5 py-2 bg-[#183F32] hover:bg-[#285844] text-white text-xs font-bold rounded-xl transition-all shadow-2xs hover:shadow cursor-pointer border border-[#AFC7A5]/40"
+                        title="Contact Faraabee on WhatsApp regarding this spiritual remedy"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" />
+                        <span>{post.contactPrompt || 'Consult on WhatsApp'}</span>
+                        <ExternalLink className="w-3 h-3 opacity-60" />
+                      </a>
+                    </div>
                   </div>
                 </article>
               );
@@ -314,7 +372,20 @@ export const SpiritualPage: React.FC<SpiritualPageProps> = ({
                 'Whether you are seeking advice regarding Ruqyah preparations, pure Sidr wash, heart-calming floral essences, or prophetic daily regimens, our concierge is here to assist with sincerity.'}
             </p>
 
-            <div className="pt-4 flex flex-wrap items-center gap-4">
+            <div className="pt-4 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setAppointmentCategory(undefined);
+                  setAppointmentModalOpen(true);
+                }}
+                className="inline-flex items-center gap-2 px-6 py-3.5 bg-gradient-to-r from-[#D4AF37] to-[#B79A5B] hover:from-[#c5a132] hover:to-[#a78b50] text-[#183F32] text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg transition-all cursor-pointer font-sans"
+              >
+                <CalendarCheck className="w-4 h-4 text-[#183F32]" />
+                <span>Book Appointment (Voice / Text)</span>
+                <Mic className="w-3.5 h-3.5 text-[#183F32]" />
+              </button>
+
               <a
                 href={getGeneralConsultationUrl()}
                 target="_blank"
@@ -336,6 +407,37 @@ export const SpiritualPage: React.FC<SpiritualPageProps> = ({
           </div>
         </div>
       </section>
+
+      {/* Floating Quick Action Appointment Button */}
+      <aside aria-label="Quick appointment trigger" className="fixed bottom-6 left-6 z-40">
+        <button
+          type="button"
+          onClick={() => {
+            setAppointmentCategory(undefined);
+            setAppointmentModalOpen(true);
+          }}
+          className="inline-flex items-center gap-2.5 px-4 sm:px-5 py-3 bg-[#183F32] hover:bg-[#285844] text-white text-xs font-bold rounded-full shadow-2xl border border-[#D4AF37]/50 transition-all hover:scale-105 group cursor-pointer"
+          title="Book Spiritual Consultation & Appointment"
+        >
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+          </span>
+          <CalendarCheck className="w-4 h-4 text-[#D4AF37]" />
+          <span className="hidden sm:inline">Book Spiritual Appointment</span>
+          <span className="sm:hidden">Appointment</span>
+          <span className="p-1 rounded-full bg-white/15 text-amber-300">
+            <Mic className="w-3 h-3" />
+          </span>
+        </button>
+      </aside>
+
+      {/* Spiritual Appointment Booking Modal */}
+      <SpiritualAppointmentModal
+        isOpen={appointmentModalOpen}
+        onClose={() => setAppointmentModalOpen(false)}
+        defaultCategory={appointmentCategory}
+      />
     </div>
   );
 };
