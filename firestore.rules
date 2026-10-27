@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Global Safety Net
+    // Global Safety Net (Zero-Trust Default Deny)
     match /{document=**} {
       allow read, write: if false;
     }
@@ -53,13 +53,38 @@ service cloud.firestore {
              data.active is bool;
     }
 
-    // Order validation
+    // Order validation (Anti-Tamper & Volumetric Protection)
     function isValidOrder(data) {
-      return data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 250 &&
-             data.customerPhone is string && data.customerPhone.size() > 0 && data.customerPhone.size() <= 100 &&
-             data.shippingAddress is string && data.shippingAddress.size() > 0 && data.shippingAddress.size() <= 1500 &&
-             data.total is number && data.total >= 0 &&
+      return data.keys().hasAll(['customerName', 'customerPhone', 'shippingAddress', 'items', 'total', 'status', 'createdAt']) &&
+             data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 150 &&
+             data.customerPhone is string && data.customerPhone.size() > 0 && data.customerPhone.size() <= 50 &&
+             data.shippingAddress is string && data.shippingAddress.size() > 0 && data.shippingAddress.size() <= 800 &&
+             (!('city' in data) || (data.city is string && data.city.size() <= 80)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000)) &&
+             data.total is number && data.total >= 0 && data.total <= 10000000 &&
+             data.items is list && data.items.size() > 0 && data.items.size() <= 50 &&
              data.status in ['pending', 'processing', 'shipped', 'delivered', 'completed', 'cancelled'];
+    }
+
+    // Appointment validation (Anti-Tamper & Volumetric Protection)
+    function isValidAppointment(data) {
+      return data.keys().hasAll(['referenceId', 'customerName', 'customerPhone', 'consultationType', 'category', 'status', 'createdAt']) &&
+             data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 150 &&
+             data.customerPhone is string && data.customerPhone.size() > 0 && data.customerPhone.size() <= 50 &&
+             data.referenceId is string && data.referenceId.size() <= 50 &&
+             (!('problemDescription' in data) || (data.problemDescription is string && data.problemDescription.size() <= 4000)) &&
+             (!('audioRecordingUrl' in data) || (data.audioRecordingUrl is string && data.audioRecordingUrl.size() <= 500000)) &&
+             data.status in ['pending', 'confirmed', 'completed', 'cancelled'];
+    }
+
+    // Security Alert Validation
+    function isValidSecurityAlert(data) {
+      return data.keys().hasAll(['id', 'timestamp']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.timestamp is string && data.timestamp.size() <= 100 &&
+             (!('description' in data) || (data.description is string && data.description.size() <= 500)) &&
+             (!('payloadSnippet' in data) || (data.payloadSnippet is string && data.payloadSnippet.size() <= 1000)) &&
+             (!('userAgent' in data) || (data.userAgent is string && data.userAgent.size() <= 500));
     }
 
     // Products Collection
@@ -86,16 +111,16 @@ service cloud.firestore {
       allow delete: if isAdmin() && isValidId(promotionId);
     }
 
-    // Orders Collection
+    // Orders Collection (Public can create pending orders only; Admin manages all)
     match /orders/{orderId} {
-      allow create: if isValidId(orderId) && isValidOrder(incoming());
+      allow create: if isValidId(orderId) && isValidOrder(incoming()) && incoming().status == 'pending';
       allow get: if isValidId(orderId);
       allow list: if isAdmin();
       allow update: if isAdmin() && isValidId(orderId) && isValidOrder(incoming());
       allow delete: if isAdmin() && isValidId(orderId);
     }
 
-    // Settings Collection (Social media channels & contact details)
+    // Settings Collection (Social media channels & contact details & firewallConfig)
     match /settings/{settingId} {
       allow get, list: if true;
       allow create, update: if isAdmin() && isValidId(settingId);
@@ -116,16 +141,19 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    // Security Alerts Collection
+    // Security Alerts Collection (Firewall incident logging)
     match /security_alerts/{alertId} {
-      allow create: if isValidId(alertId);
+      allow create: if isValidId(alertId) && isValidSecurityAlert(incoming());
       allow get, list, update, delete: if isAdmin();
     }
 
     // Customer Reviews Collection
     match /reviews/{reviewId} {
       allow get, list: if true;
-      allow create: if isValidId(reviewId) && incoming().rating is number && incoming().rating >= 1 && incoming().rating <= 5 && incoming().author is string && incoming().author.size() > 0;
+      allow create: if isValidId(reviewId) &&
+                       incoming().rating is number && incoming().rating >= 1 && incoming().rating <= 5 &&
+                       incoming().author is string && incoming().author.size() > 0 && incoming().author.size() <= 80 &&
+                       (!('comment' in incoming()) || (incoming().comment is string && incoming().comment.size() <= 1500));
       allow update, delete: if isAdmin() && isValidId(reviewId);
     }
 
@@ -135,16 +163,9 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin() && isValidId(bundleId);
     }
 
-    // Appointment validation
-    function isValidAppointment(data) {
-      return data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 200 &&
-             data.customerPhone is string && data.customerPhone.size() > 0 && data.customerPhone.size() <= 100 &&
-             (!('status' in data) || data.status in ['pending', 'confirmed', 'completed', 'cancelled']);
-    }
-
-    // Spiritual Appointments Collection
+    // Spiritual Appointments Collection (Public can create pending appointments only; Admin manages)
     match /appointments/{appointmentId} {
-      allow create: if isValidId(appointmentId) && isValidAppointment(incoming());
+      allow create: if isValidId(appointmentId) && isValidAppointment(incoming()) && incoming().status == 'pending';
       allow get: if isValidId(appointmentId);
       allow list: if isAdmin();
       allow update: if isAdmin() && isValidId(appointmentId) && isValidAppointment(incoming());

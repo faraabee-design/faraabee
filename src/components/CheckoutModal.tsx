@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CartItem } from '../types';
 import { useStore } from '../context/StoreContext';
+import { FirewallEngine } from '../lib/firewallEngine';
 import {
   X,
   CheckCircle,
@@ -48,6 +49,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [transactionId, setTransactionId] = useState('');
   const [senderTitle, setSenderTitle] = useState('');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [honeypotField, setHoneypotField] = useState('');
 
   const [orderSubmitted, setOrderSubmitted] = useState(false);
   const [orderRef, setOrderRef] = useState('');
@@ -93,31 +95,72 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     setSubmitting(true);
     setSubmitError(null);
 
+    // 1. Check Firewall Emergency Lockdown
+    const lockdown = await FirewallEngine.checkLockdown();
+    if (lockdown.isLocked) {
+      setSubmitError(lockdown.message || 'Orders are temporarily paused for routine security maintenance.');
+      setSubmitting(false);
+      return;
+    }
+
+    // 2. Check Anti-Bot Honeypot Trap
+    const botCheck = await FirewallEngine.verifyHoneypot(honeypotField, '/checkout/place-order');
+    if (!botCheck.passed) {
+      setSubmitError('Verification failed. Automated submissions are blocked.');
+      setSubmitting(false);
+      return;
+    }
+
+    // 3. Check Sliding Window Rate Limiter
+    const rateCheck = await FirewallEngine.checkRateLimit('order', '/checkout/place-order');
+    if (!rateCheck.passed) {
+      setSubmitError(rateCheck.error || 'Too many submissions. Please wait a moment.');
+      setSubmitting(false);
+      return;
+    }
+
+    // 4. Inspect inputs for malicious code / script injection
+    const rawInspectionString = [name, phone, email, address, city, notes, transactionId, senderTitle].join(' ');
+    const inspection = FirewallEngine.inspectString(rawInspectionString);
+    if (inspection.isMalicious) {
+      await FirewallEngine.recordThreatIncident({
+        category: inspection.category || 'xss_injection',
+        severity: 'high',
+        description: `Blocked code injection in order checkout: ${inspection.reason}`,
+        sourceEndpoint: '/checkout/place-order',
+        payloadSnippet: inspection.snippet,
+        actionTaken: 'blocked_and_quarantined',
+      });
+      setSubmitError('Security Notice: Code tags and script elements are blocked for safety. Please enter plain text only.');
+      setSubmitting(false);
+      return;
+    }
+
     const orderItems = items.map((i) => ({
       productId: i.product.id,
-      name: i.product.name,
+      name: FirewallEngine.sanitizeString(i.product.name),
       price:
         i.product.salePrice && i.product.salePrice < i.product.price
           ? i.product.salePrice
           : i.product.price,
-      quantity: i.quantity,
+      quantity: Math.max(1, Math.min(99, i.quantity)),
       image: i.product.image || '',
     }));
 
     try {
       // Save order to Firestore with strictly sanitized fields
       const newOrderId = await createOrder({
-        customerName: name.trim(),
-        customerPhone: phone.trim(),
-        customerEmail: email.trim(),
-        shippingAddress: address.trim(),
-        city: city.trim() || 'Pakistan',
-        notes: notes.trim(),
+        customerName: FirewallEngine.sanitizeString(name.trim()),
+        customerPhone: FirewallEngine.sanitizeString(phone.trim()),
+        customerEmail: FirewallEngine.sanitizeString(email.trim()) || undefined,
+        shippingAddress: FirewallEngine.sanitizeString(address.trim()),
+        city: FirewallEngine.sanitizeString(city.trim()) || 'Pakistan',
+        notes: notes.trim() ? FirewallEngine.sanitizeString(notes.trim()) : undefined,
         items: orderItems,
         total: grandTotal,
         paymentMethod: method,
-        transactionId: transactionId.trim() || undefined,
-        paymentSenderTitle: senderTitle.trim() || undefined,
+        transactionId: transactionId.trim() ? FirewallEngine.sanitizeString(transactionId.trim()) : undefined,
+        paymentSenderTitle: senderTitle.trim() ? FirewallEngine.sanitizeString(senderTitle.trim()) : undefined,
         status: 'pending',
       });
 
@@ -317,6 +360,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         ) : (
           /* Checkout Form */
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            {/* Anti-Bot Security Honeypot (Invisible to human users) */}
+            <input
+              type="text"
+              name="farabi_verification_trap"
+              value={honeypotField}
+              onChange={(e) => setHoneypotField(e.target.value)}
+              style={{ display: 'none', position: 'absolute', opacity: 0, pointerEvents: 'none' }}
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+            />
             {/* Items Summary Pills */}
             <div className="p-4 bg-[#FAF9F3] rounded-2xl border border-[#AFC7A5]/30 space-y-2">
               <div className="flex justify-between text-xs text-[#26312B]/75">

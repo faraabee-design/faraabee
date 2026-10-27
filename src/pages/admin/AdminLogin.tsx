@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FarabiLogo } from '../../components/FarabiLogo';
 import { useAuth, AUTHORIZED_ADMIN_EMAILS } from '../../context/FirebaseContext';
+import { FirewallEngine } from '../../lib/firewallEngine';
 import { Lock, Mail, ArrowRight, AlertCircle, Laptop } from 'lucide-react';
 
 interface AdminLoginProps {
@@ -33,6 +34,14 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onBackToStore }) => {
     }
 
     if (!AUTHORIZED_ADMIN_EMAILS.includes(cleanEmail)) {
+      await FirewallEngine.recordThreatIncident({
+        category: 'unauthorized_access',
+        severity: 'high',
+        description: `Unauthorized admin login attempt for email: ${cleanEmail}`,
+        sourceEndpoint: '/admin/login',
+        payloadSnippet: `Attempted Email: ${cleanEmail}`,
+        actionTaken: 'blocked_and_quarantined',
+      });
       setError('Access Denied: Invalid email or password.');
       return;
     }
@@ -44,6 +53,16 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onBackToStore }) => {
       await loginWithEmail(cleanEmail, password);
     } catch (err: any) {
       const errMsg = err?.message || 'Invalid administrator credentials.';
+
+      await FirewallEngine.recordThreatIncident({
+        category: 'brute_force_login',
+        severity: 'high',
+        description: `Failed admin authentication attempt for ${cleanEmail}`,
+        sourceEndpoint: '/admin/login',
+        payloadSnippet: `Target: ${cleanEmail}`,
+        actionTaken: 'blocked_and_quarantined',
+      });
+
       if (errMsg.includes('Access Denied')) {
         setError(errMsg);
       } else {

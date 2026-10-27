@@ -217,19 +217,51 @@ export type PageId =
   | 'terms'
   | 'admin';
 
+export type ThreatCategory =
+  | 'xss_injection'
+  | 'sql_injection'
+  | 'bot_honeypot'
+  | 'rate_limit_flood'
+  | 'oversized_payload'
+  | 'tamper_attempt'
+  | 'brute_force_login'
+  | 'unauthorized_access';
+
+export type ThreatSeverity = 'critical' | 'high' | 'medium' | 'low';
+
 export interface SecurityAlert {
   id: string;
-  targetEmail: string;
-  failedAttempts: number;
+  category?: ThreatCategory;
+  severity?: ThreatSeverity;
+  description?: string;
+  sourceEndpoint?: string;
+  payloadSnippet?: string;
+  clientFingerprint?: string;
+  deviceSummary?: string;
+  actionTaken?: 'blocked_and_quarantined' | 'locked_out' | 'rate_limited' | 'sanitized';
+  targetEmail?: string;
+  failedAttempts?: number;
   timestamp: string;
-  localTime: string;
-  device: string;
-  userAgent: string;
-  platform: string;
-  screen: string;
-  status: 'dispatched' | 'pending';
-  sourceUrl: string;
+  localTime?: string;
+  device?: string;
+  userAgent?: string;
+  platform?: string;
+  screen?: string;
+  status?: 'dispatched' | 'pending' | 'blocked';
+  sourceUrl?: string;
   read?: boolean;
+}
+
+export interface FirewallSettings {
+  enabled: boolean;
+  strictXssFilter: boolean;
+  botTrapEnabled: boolean;
+  rateLimiterEnabled: boolean;
+  emergencyLockdown: boolean;
+  lockdownMessage?: string;
+  maxOrdersPerWindow: number;
+  maxAppointmentsPerWindow: number;
+  updatedAt?: string;
 }
 
 export interface Review {

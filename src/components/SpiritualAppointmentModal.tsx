@@ -23,6 +23,7 @@ import {
   Volume2,
 } from 'lucide-react';
 import { ConsultationType } from '../types';
+import { FirewallEngine } from '../lib/firewallEngine';
 
 interface SpiritualAppointmentModalProps {
   isOpen: boolean;
@@ -84,6 +85,8 @@ export const SpiritualAppointmentModal: React.FC<SpiritualAppointmentModalProps>
   // Submission & Confirmation state
   const [submitting, setSubmitting] = useState(false);
   const [submittedReference, setSubmittedReference] = useState<string | null>(null);
+  const [honeypotField, setHoneypotField] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     if (defaultCategory) {
@@ -222,24 +225,73 @@ export const SpiritualAppointmentModal: React.FC<SpiritualAppointmentModalProps>
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerName.trim() || !customerPhone.trim()) return;
+    setFormError(null);
+
+    if (!customerName.trim() || !customerPhone.trim()) {
+      setFormError('Please enter both patient name and contact phone number.');
+      return;
+    }
 
     setSubmitting(true);
+
+    // 1. Check Firewall Emergency Lockdown
+    const lockdown = await FirewallEngine.checkLockdown();
+    if (lockdown.isLocked) {
+      setFormError(lockdown.message || 'Consultation bookings are temporarily paused for security.');
+      setSubmitting(false);
+      return;
+    }
+
+    // 2. Check Anti-Bot Honeypot Trap
+    const botCheck = await FirewallEngine.verifyHoneypot(honeypotField, '/spiritual/book-appointment');
+    if (!botCheck.passed) {
+      setFormError('Verification failed. Automated submissions are blocked.');
+      setSubmitting(false);
+      return;
+    }
+
+    // 3. Check Sliding Window Rate Limiter
+    const rateCheck = await FirewallEngine.checkRateLimit('appointment', '/spiritual/book-appointment');
+    if (!rateCheck.passed) {
+      setFormError(rateCheck.error || 'Too many submissions. Please wait a moment.');
+      setSubmitting(false);
+      return;
+    }
+
+    // 4. Inspect inputs for malicious code / script injection
+    const rawInspectionString = [customerName, customerPhone, customerEmail, city, problemDescription].join(' ');
+    const inspection = FirewallEngine.inspectString(rawInspectionString);
+    if (inspection.isMalicious) {
+      await FirewallEngine.recordThreatIncident({
+        category: inspection.category || 'xss_injection',
+        severity: 'high',
+        description: `Blocked code injection in appointment booking: ${inspection.reason}`,
+        sourceEndpoint: '/spiritual/book-appointment',
+        payloadSnippet: inspection.snippet,
+        actionTaken: 'blocked_and_quarantined',
+      });
+      setFormError('Security Notice: Code tags and script elements are blocked for safety. Please enter plain text only.');
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const randomDigits = Math.floor(10000 + Math.random() * 90000);
       const generatedRef = `APT-${randomDigits}`;
 
       await createAppointment({
         referenceId: generatedRef,
-        customerName: customerName.trim(),
-        customerPhone: customerPhone.trim(),
-        customerEmail: customerEmail.trim() || undefined,
-        city: city.trim() || 'Pakistan',
+        customerName: FirewallEngine.sanitizeString(customerName.trim()),
+        customerPhone: FirewallEngine.sanitizeString(customerPhone.trim()),
+        customerEmail: customerEmail.trim() ? FirewallEngine.sanitizeString(customerEmail.trim()) : undefined,
+        city: city.trim() ? FirewallEngine.sanitizeString(city.trim()) : 'Pakistan',
         preferredDate,
         preferredTimeSlot,
         consultationType,
         category,
-        problemDescription: problemDescription.trim() || (audioUrl ? 'Voice consultation recording attached' : ''),
+        problemDescription: problemDescription.trim()
+          ? FirewallEngine.sanitizeString(problemDescription.trim())
+          : (audioUrl ? 'Voice consultation recording attached' : ''),
         audioRecordingUrl: audioUrl || undefined,
         audioDurationSeconds: recordingDuration > 0 ? recordingDuration : undefined,
         status: 'pending',
@@ -248,6 +300,7 @@ export const SpiritualAppointmentModal: React.FC<SpiritualAppointmentModalProps>
       setSubmittedReference(generatedRef);
     } catch (err) {
       console.error('Failed to book appointment:', err);
+      setFormError('Could not submit appointment. Please check your network connection and try again.');
     } finally {
       setSubmitting(false);
     }
@@ -375,6 +428,26 @@ export const SpiritualAppointmentModal: React.FC<SpiritualAppointmentModalProps>
         ) : (
           /* Form Content */
           <form onSubmit={handleSubmit} className="p-6 sm:p-7 space-y-6 max-h-[75vh] overflow-y-auto">
+            {/* Anti-Bot Security Honeypot (Invisible to humans) */}
+            <input
+              type="text"
+              name="farabi_bot_detector"
+              value={honeypotField}
+              onChange={(e) => setHoneypotField(e.target.value)}
+              style={{ display: 'none', position: 'absolute', opacity: 0, pointerEvents: 'none' }}
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+            />
+
+            {/* Security or Validation Error Banner */}
+            {formError && (
+              <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                <span className="leading-relaxed font-medium">{formError}</span>
+              </div>
+            )}
+
             {/* Consultation Choice Mode */}
             <div className="space-y-3">
               <label className="block text-xs font-bold text-[#183F32] uppercase tracking-wider">
