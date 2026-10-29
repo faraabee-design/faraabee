@@ -1,83 +1,97 @@
 import React from 'react';
-import { FileText, AlertCircle } from 'lucide-react';
-import { siteConfig } from '../config/siteConfig';
+import { FileText, AlertCircle, CheckCircle2, MessageCircle, Scale } from 'lucide-react';
+import { useStore } from '../context/StoreContext';
+import { DEFAULT_LEGAL_POLICIES } from '../config/defaultLegal';
 
 export const TermsPage: React.FC = () => {
+  const { legalPolicies, language } = useStore();
+  const isUrdu = language === 'ur';
+
+  const cfg = legalPolicies || DEFAULT_LEGAL_POLICIES;
+
+  const title = (isUrdu && cfg.termsTitleUrdu) ? cfg.termsTitleUrdu : (cfg.termsTitle || DEFAULT_LEGAL_POLICIES.termsTitle);
+  const subtitle = (isUrdu && cfg.termsSubtitleUrdu) ? cfg.termsSubtitleUrdu : (cfg.termsSubtitle || DEFAULT_LEGAL_POLICIES.termsSubtitle);
+  const effectiveDate = cfg.termsEffectiveDate || DEFAULT_LEGAL_POLICIES.termsEffectiveDate;
+  const intro = (isUrdu && cfg.termsIntroUrdu) ? cfg.termsIntroUrdu : (cfg.termsIntro || DEFAULT_LEGAL_POLICIES.termsIntro);
+  const disclaimerBox = (isUrdu && cfg.termsDisclaimerBoxUrdu) ? cfg.termsDisclaimerBoxUrdu : (cfg.termsDisclaimerBox || DEFAULT_LEGAL_POLICIES.termsDisclaimerBox);
+  const sections = cfg.termsSections || DEFAULT_LEGAL_POLICIES.termsSections;
+  const contactNotice = (isUrdu && cfg.termsContactNoticeUrdu) ? cfg.termsContactNoticeUrdu : (cfg.termsContactNotice || DEFAULT_LEGAL_POLICIES.termsContactNotice);
+
   return (
-    <div className="bg-[#FAF9F3] min-h-screen py-12 sm:py-16">
+    <div className="bg-[#FAF9F3] min-h-screen py-12 sm:py-16" dir={isUrdu ? 'rtl' : 'ltr'}>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-3xl p-8 sm:p-12 border border-[#AFC7A5]/35 shadow-xs space-y-8">
-          <div className="border-b border-[#AFC7A5]/25 pb-6">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#285844] mb-2">
-              <FileText className="w-4 h-4" />
-              <span>TERMS OF ENGAGEMENT</span>
+          {/* Header */}
+          <div className="border-b border-[#AFC7A5]/25 pb-6 space-y-2">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#285844]">
+              <Scale className="w-4 h-4 text-emerald-700" />
+              <span>{isUrdu ? 'فارابی اخلاقی و قانونی معاہدہ' : 'FARAABEE TERMS OF ENGAGEMENT'}</span>
             </div>
-            <h1 className="font-serif text-3xl sm:text-4xl text-[#183F32]">
-              Terms & Conditions
+            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#183F32]">
+              {title}
             </h1>
-            <p className="text-xs text-[#26312B]/60 mt-1">
-              Effective Date: March 2026 · FARAABEE Herbal Wellness
+            <p className="text-sm text-[#26312B]/75 leading-relaxed font-sans">
+              {subtitle}
             </p>
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#E8F1DF] text-[#183F32] rounded-lg text-xs font-semibold mt-2">
+              <FileText className="w-3.5 h-3.5 text-emerald-700" />
+              <span>{isUrdu ? `مؤثر تاریخ: ${effectiveDate}` : `Effective Date: ${effectiveDate}`}</span>
+            </div>
           </div>
 
-          <div className="space-y-6 text-xs sm:text-sm text-[#26312B]/85 leading-relaxed">
-            <div className="p-4 bg-[#E8F1DF]/70 rounded-xl border border-[#AFC7A5]/40 flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-[#285844] shrink-0 mt-0.5" />
-              <div>
-                <strong className="text-[#183F32] block mb-1">
-                  Responsible Botanical Wellness Disclaimer
+          {/* Responsible Wellness Disclaimer Banner */}
+          {disclaimerBox && (
+            <div className="p-5 sm:p-6 bg-[#E8F1DF]/75 rounded-2xl border border-[#AFC7A5]/50 flex items-start gap-3.5">
+              <AlertCircle className="w-6 h-6 text-[#285844] shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <strong className="text-sm font-bold text-[#183F32] block">
+                  {isUrdu ? 'ذمہ دارانہ نباتاتی و روایتی حکمت کا انتباہ:' : 'Responsible Botanical Wellness Disclaimer:'}
                 </strong>
-                <span>
-                  FARAABEE products are traditional herbal wellness and topical self-care preparations. Statements have not been evaluated by regulatory agencies. Products are not intended to diagnose, treat, cure, or prevent any illness or disease. Always seek advice from certified medical practitioners for health concerns.
-                </span>
+                <p className="text-xs sm:text-sm text-[#26312B]/85 leading-relaxed">
+                  {disclaimerBox}
+                </p>
               </div>
             </div>
+          )}
 
-            <section className="space-y-2">
-              <h2 className="font-serif text-lg font-semibold text-[#183F32]">
-                1. Order Placement & Acceptance
-              </h2>
-              <p>
-                By placing an order via our online portal, WhatsApp desk, or authorized stockists, you confirm that your provided delivery coordinates are accurate. All orders remain subject to batch availability and verification by our Gujranwala desk.
-              </p>
-            </section>
+          {/* Opening Introduction */}
+          {intro && (
+            <div className="p-5 sm:p-6 bg-[#FAF9F3] rounded-2xl border border-[#AFC7A5]/30 text-xs sm:text-sm text-[#183F32] font-serif leading-relaxed italic">
+              &ldquo;{intro}&rdquo;
+            </div>
+          )}
 
-            <section className="space-y-2">
-              <h2 className="font-serif text-lg font-semibold text-[#183F32]">
-                2. Pricing and Shipping
-              </h2>
-              <p>
-                All prices are stated in {siteConfig.currency.code} ({siteConfig.currency.symbol}). Orders exceeding {siteConfig.currency.symbol} {siteConfig.currency.freeShippingThreshold.toLocaleString()} qualify for complimentary domestic delivery. Standard domestic transit requires 2–4 business days depending on city destination.
-              </p>
-            </section>
-
-            <section className="space-y-2">
-              <h2 className="font-serif text-lg font-semibold text-[#183F32]">
-                3. Topical Herbal Usage & Sensitivity
-              </h2>
-              <p>
-                Because natural plant oils and extracts are potent, the user agrees to perform a 24-hour skin patch test prior to full topical application. If skin irritation develops, discontinue use immediately.
-              </p>
-            </section>
-
-            <section className="space-y-2">
-              <h2 className="font-serif text-lg font-semibold text-[#183F32]">
-                4. Returns & Damaged Goods
-              </h2>
-              <p>
-                Due to hygienic apothecary standards, opened cosmetic bottles and balms cannot be returned. Should a package arrive damaged or compromised in transit, notify our team within 48 hours with photographic evidence for immediate replacement.
-              </p>
-            </section>
-
-            <section className="space-y-2">
-              <h2 className="font-serif text-lg font-semibold text-[#183F32]">
-                5. Intellectual Property
-              </h2>
-              <p>
-                The FARAABEE brand mark, Urdu calligraphy (فارابی), formulation names, visual compositions, and herbal journal essays are the original property of FARAABEE Herbal Wellness.
-              </p>
-            </section>
+          {/* Dynamic Terms Sections */}
+          <div className="space-y-6 text-xs sm:text-sm text-[#26312B]/85 leading-relaxed">
+            {sections.map((sec, idx) => {
+              const secTitle = (isUrdu && sec.titleUrdu) ? sec.titleUrdu : sec.title;
+              const secContent = (isUrdu && sec.contentUrdu) ? sec.contentUrdu : sec.content;
+              return (
+                <section key={sec.id || idx} className="space-y-2 p-4 rounded-2xl hover:bg-[#FAF9F3]/50 transition-colors">
+                  <h2 className="font-serif text-lg font-bold text-[#183F32] flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                    <span>{secTitle}</span>
+                  </h2>
+                  <p className="whitespace-pre-line text-[#26312B]/80 pl-6 leading-relaxed">
+                    {secContent}
+                  </p>
+                </section>
+              );
+            })}
           </div>
+
+          {/* Contact / Help Footer Notice */}
+          {contactNotice && (
+            <div className="pt-6 border-t border-[#AFC7A5]/25 flex items-start gap-3 p-4 bg-[#E8F1DF]/50 rounded-2xl text-xs sm:text-sm text-[#183F32]">
+              <MessageCircle className="w-5 h-5 text-[#183F32] shrink-0 mt-0.5" />
+              <div>
+                <strong className="block font-bold mb-1">
+                  {isUrdu ? 'رابطہ و قانونی رہنمائی:' : 'Apothecary Headquarters Desk:'}
+                </strong>
+                <p className="text-[#26312B]/80 leading-relaxed">{contactNotice}</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

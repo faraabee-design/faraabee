@@ -460,4 +460,57 @@ export interface AppointmentSlotConfig {
   updatedAt?: string;
 }
 
+export interface PolicySection {
+  id: string;
+  title: string;
+  titleUrdu?: string;
+  content: string;
+  contentUrdu?: string;
+  icon?: string;
+}
+
+export interface LegalPoliciesConfig {
+  // Privacy Policy
+  privacyTitle: string;
+  privacyTitleUrdu?: string;
+  privacySubtitle: string;
+  privacySubtitleUrdu?: string;
+  privacyEffectiveDate: string;
+  privacyIntro: string;
+  privacyIntroUrdu?: string;
+  privacySections: PolicySection[];
+  privacyContactNotice: string;
+  privacyContactNoticeUrdu?: string;
+
+  // Terms of Use
+  termsTitle: string;
+  termsTitleUrdu?: string;
+  termsSubtitle: string;
+  termsSubtitleUrdu?: string;
+  termsEffectiveDate: string;
+  termsIntro: string;
+  termsIntroUrdu?: string;
+  termsDisclaimerBox: string;
+  termsDisclaimerBoxUrdu?: string;
+  termsSections: PolicySection[];
+  termsContactNotice: string;
+  termsContactNoticeUrdu?: string;
+
+  // Consent Popup Banner (Every device pop-up to accept terms & privacy)
+  consentBannerEnabled: boolean;
+  consentTitle: string;
+  consentTitleUrdu?: string;
+  consentMessage: string;
+  consentMessageUrdu?: string;
+  consentAcceptButtonText: string;
+  consentAcceptButtonTextUrdu?: string;
+  consentLearnMoreText: string;
+  consentLearnMoreTextUrdu?: string;
+  consentBadgeText?: string;
+  consentBadgeTextUrdu?: string;
+
+  updatedAt?: string;
+}
+
+
 

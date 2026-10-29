@@ -8,6 +8,7 @@ import { CartDrawer } from './components/CartDrawer';
 import { CheckoutModal } from './components/CheckoutModal';
 import { ArticleModal } from './components/ArticleModal';
 import { AudioSanctuaryPlayer } from './components/AudioSanctuaryPlayer';
+import { LegalConsentBanner } from './components/LegalConsentBanner';
 
 import { HomePage } from './pages/HomePage';
 import { AboutPage } from './pages/AboutPage';
@@ -321,6 +322,11 @@ function MainApp() {
 
       {/* Audio Sanctuary Quranic & Ruqyah Player */}
       <AudioSanctuaryPlayer />
+
+      {/* Device Terms & Privacy Consent Banner */}
+      <LegalConsentBanner
+        onNavigatePolicy={(page) => handleNavigate(page)}
+      />
 
       {/* Quiet Toast Notification */}
       {toastMessage && (

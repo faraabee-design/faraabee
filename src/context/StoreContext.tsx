@@ -39,12 +39,14 @@ import {
   AppointmentSlotConfig,
   AppointmentStatus,
   ConsultationType,
+  LegalPoliciesConfig,
 } from '../types';
 import { DEFAULT_PAYMENT_SETTINGS } from '../config/defaultPayment';
 import {
   DEFAULT_SPIN_WHEEL_SETTINGS,
   DEFAULT_HAKEEM_BARGAIN_SETTINGS,
 } from '../config/defaultFunFeatures';
+import { DEFAULT_LEGAL_POLICIES } from '../config/defaultLegal';
 
 export const DEFAULT_APPOINTMENT_CONFIG: AppointmentSlotConfig = {
   acceptingAppointments: true,
@@ -239,6 +241,10 @@ interface StoreContextType {
   deleteAppointment: (id: string) => Promise<void>;
   updateAppointmentConfig: (updates: Partial<AppointmentSlotConfig>) => Promise<void>;
   refreshAppointments: () => Promise<void>;
+  // Legal Policies & Consent Popup Customization
+  legalPolicies: LegalPoliciesConfig;
+  updateLegalPolicies: (updates: Partial<LegalPoliciesConfig>) => Promise<void>;
+  resetLegalPoliciesToDefault: () => Promise<void>;
   appliedCoupon: {
     code: string;
     discountPercent?: number;
@@ -386,6 +392,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return saved ? JSON.parse(saved) : DEFAULT_APPOINTMENT_CONFIG;
     } catch {
       return DEFAULT_APPOINTMENT_CONFIG;
+    }
+  });
+  const [legalPolicies, setLegalPolicies] = useState<LegalPoliciesConfig>(() => {
+    try {
+      const saved = localStorage.getItem('farabi_legal_policies');
+      return saved ? JSON.parse(saved) : DEFAULT_LEGAL_POLICIES;
+    } catch {
+      return DEFAULT_LEGAL_POLICIES;
     }
   });
   const [appliedCoupon, setAppliedCoupon] = useState<{
@@ -689,6 +703,23 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       (err) => console.warn('Could not read appointment config:', err.message)
     );
 
+    const unsubLegalPolicies = onSnapshot(
+      doc(db, 'settings', 'legalPolicies'),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const remote = docSnap.data() as LegalPoliciesConfig;
+          setLegalPolicies((prev) => {
+            const next = { ...prev, ...remote };
+            try {
+              localStorage.setItem('farabi_legal_policies', JSON.stringify(next));
+            } catch {}
+            return next;
+          });
+        }
+      },
+      (err) => console.warn('Could not read legal policies:', err.message)
+    );
+
     return () => {
       unsubSocials();
       unsubContact();
@@ -698,6 +729,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       unsubHakeemBargain();
       unsubDeveloperSignature();
       unsubAppointmentConfig();
+      unsubLegalPolicies();
     };
   }, []);
 
@@ -1427,6 +1459,40 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const updateLegalPolicies = async (updates: Partial<LegalPoliciesConfig>) => {
+    const merged: LegalPoliciesConfig = {
+      ...legalPolicies,
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+    setLegalPolicies(merged);
+    try {
+      localStorage.setItem('farabi_legal_policies', JSON.stringify(merged));
+    } catch {}
+
+    try {
+      const clean = cleanForCreate(merged);
+      await setDoc(doc(db, 'settings', 'legalPolicies'), clean, { merge: true });
+    } catch (err) {
+      console.warn('Could not save legal policies to Firestore, saved locally:', err);
+    }
+  };
+
+  const resetLegalPoliciesToDefault = async () => {
+    const fresh: LegalPoliciesConfig = {
+      ...DEFAULT_LEGAL_POLICIES,
+      updatedAt: new Date().toISOString(),
+    };
+    setLegalPolicies(fresh);
+    try {
+      localStorage.setItem('farabi_legal_policies', JSON.stringify(fresh));
+      const clean = cleanForCreate(fresh);
+      await setDoc(doc(db, 'settings', 'legalPolicies'), clean);
+    } catch (err) {
+      console.warn('Error resetting legal policies:', err);
+    }
+  };
+
   const refreshAppointments = async () => {
     try {
       const snap = await getDocs(collection(db, 'appointments'));
@@ -1752,6 +1818,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         deleteAppointment,
         updateAppointmentConfig,
         refreshAppointments,
+        legalPolicies,
+        updateLegalPolicies,
+        resetLegalPoliciesToDefault,
         appliedCoupon,
         applyCoupon,
         removeCoupon,

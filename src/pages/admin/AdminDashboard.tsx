@@ -19,6 +19,7 @@ import { AdminFeatures } from './AdminFeatures';
 import { AdminGamification } from './AdminGamification';
 import { AdminDeveloperSignature } from './AdminDeveloperSignature';
 import { AdminAppointments } from './AdminAppointments';
+import { AdminLegalPolicies } from './AdminLegalPolicies';
 import {
   LayoutDashboard,
   Package,
@@ -41,6 +42,7 @@ import {
   Gift,
   PenTool,
   CalendarCheck,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -62,6 +64,7 @@ type TabType =
   | 'promotions'
   | 'orders'
   | 'security'
+  | 'legal'
   | 'socials'
   | 'gamification'
   | 'attribution'
@@ -102,6 +105,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, o
     { id: 'promotions' as TabType, label: 'Promotions', icon: Tag },
     { id: 'orders' as TabType, label: 'Orders', icon: ShoppingBag },
     { id: 'security' as TabType, label: 'Security & Lockouts', icon: ShieldAlert },
+    { id: 'legal' as TabType, label: 'Legal & Consent Popup', icon: ShieldCheck },
     { id: 'socials' as TabType, label: 'Socials & Contact', icon: Share2 },
     { id: 'attribution' as TabType, label: 'Creator Signature', icon: PenTool },
     { id: 'gamification' as TabType, label: 'Wheel & Bargain', icon: Gift },
@@ -329,6 +333,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBackToStore, o
 
         {activeTab === 'security' && (
           <AdminSecurity onNotify={showNotification} />
+        )}
+
+        {activeTab === 'legal' && (
+          <AdminLegalPolicies onNotify={showNotification} />
         )}
 
         {activeTab === 'socials' && (
