@@ -387,13 +387,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         <div className="pt-8 flex flex-col md:flex-row items-center justify-between text-xs text-[#FAF9F3]/60 gap-4">
           <div className="flex flex-wrap items-center gap-3">
             <p>© 2026 FARAABEE. All rights reserved. Handcrafted herbal wellness.</p>
-            <span className="text-[#FAF9F3]/30">•</span>
-            <button
-              onClick={() => handleNav('admin')}
-              className="hover:text-white transition-colors cursor-pointer text-[11px] underline opacity-70 hover:opacity-100"
-            >
-              Admin Portal
-            </button>
           </div>
 
           <div className="text-center md:text-right text-[11px] max-w-xl opacity-60">

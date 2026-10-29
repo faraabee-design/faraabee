@@ -111,6 +111,39 @@ function MainApp() {
     return () => window.removeEventListener('hashchange', handleRouting);
   }, []);
 
+  // Secret direct typing trigger to open Admin Portal: "aadamfaraabeesineenfaraabee"
+  useEffect(() => {
+    let keyBuffer = '';
+    const secretTrigger = 'aadamfaraabeesineenfaraabee';
+    let resetTimer: ReturnType<typeof setTimeout>;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore functional modifier combinations like Ctrl+C, Alt+Tab, etc.
+      if (e.ctrlKey || e.altKey || e.metaKey) return;
+      if (!e.key || e.key.length !== 1) return;
+
+      keyBuffer = (keyBuffer + e.key.toLowerCase()).slice(-secretTrigger.length);
+
+      if (keyBuffer === secretTrigger) {
+        keyBuffer = '';
+        setCurrentPage('admin');
+        window.location.hash = 'admin';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      clearTimeout(resetTimer);
+      resetTimer = setTimeout(() => {
+        keyBuffer = '';
+      }, 15000);
+    };
+
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, true);
+      clearTimeout(resetTimer);
+    };
+  }, []);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => {
