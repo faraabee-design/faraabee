@@ -404,6 +404,20 @@ export const SpiritualPage: React.FC<SpiritualPageProps> = ({
                 <span>Direct Call ({contactInfo.whatsappDisplay || contactInfo.phone})</span>
               </a>
             </div>
+
+            {/* Faith-Based Spiritual & Non-Medical Legal Shield */}
+            <div className="mt-8 p-4 rounded-xl bg-white/10 border border-white/20 text-left text-[11px] text-white/90 space-y-2">
+              <div className="flex items-center gap-2 font-bold text-[#D4AF37] uppercase tracking-wider text-[10px]">
+                <ShieldCheck className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                <span>Faith-Based Guidance & Non-Medical Practice Legal Notice</span>
+              </div>
+              <p className="leading-relaxed">
+                <strong>Spiritual Nature of Consultations:</strong> All sessions, audio submissions, wazaif, and Ruqyah guidance provided through FARAABEE Spiritual Sanctuary are traditional Islamic religious, faith-based supplications and spiritual wellbeing practices.
+              </p>
+              <p className="leading-relaxed text-white/75 text-[10px]">
+                <strong>No Medical or Psychiatric Advice:</strong> These services do <em>not</em> constitute medical diagnosis, clinical psychotherapy, psychiatric treatment, or licensed healthcare practice under national or international laws. Individuals experiencing medical, clinical, or psychiatric emergencies must seek care from licensed medical physicians and psychiatric professionals immediately. Spiritual recitation is supplementary to, and never a substitute for, professional medical treatment.
+              </p>
+            </div>
           </div>
         </div>
       </section>

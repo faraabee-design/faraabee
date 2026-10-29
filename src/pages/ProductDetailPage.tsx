@@ -333,12 +333,29 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     />
                   </button>
                   {openAccordion === 'ingredients' && (
-                    <div className="pb-4 text-xs sm:text-sm text-[#26312B]/80 leading-relaxed">
+                    <div className="pb-4 text-xs sm:text-sm text-[#26312B]/80 leading-relaxed space-y-4">
                       <ul className="list-disc pl-5 space-y-1">
                         {product.ingredients.map((ing, i) => (
                           <li key={i}>{ing}</li>
                         ))}
                       </ul>
+
+                      {/* Key Botanical Actives & Benefits */}
+                      {product.keyBotanicals && product.keyBotanicals.length > 0 && (
+                        <div className="pt-2 border-t border-[#AFC7A5]/20 space-y-2">
+                          <span className="text-xs font-bold text-[#183F32] uppercase tracking-wider block">
+                            Key Botanical Actives & Roles:
+                          </span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {product.keyBotanicals.map((kb, idx) => (
+                              <div key={idx} className="p-2.5 rounded-xl bg-[#FAF9F3] border border-[#AFC7A5]/30">
+                                <strong className="text-[#183F32] text-xs block">{kb.name}</strong>
+                                <span className="text-[11px] text-[#26312B]/75">{kb.benefit}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -376,6 +393,53 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   )}
                 </div>
               )}
+
+              {/* Storage, Packaging & Safety Precautions */}
+              {(product.precautions || product.packagingInfo) && (
+                <div>
+                  <button
+                    onClick={() => toggleAccordion('safety')}
+                    className="w-full py-4 flex items-center justify-between text-left text-sm font-semibold text-[#183F32] hover:text-[#285844] cursor-pointer"
+                  >
+                    <span>Storage, Glass Bottle & Precautions</span>
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform duration-200 ${
+                        openAccordion === 'safety' ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+                  {openAccordion === 'safety' && (
+                    <div className="pb-4 text-xs sm:text-sm text-[#26312B]/80 leading-relaxed space-y-2">
+                      {product.packagingInfo && (
+                        <p>
+                          <strong className="text-[#183F32]">Packaging & Glass:</strong>{' '}
+                          {product.packagingInfo}
+                        </p>
+                      )}
+                      {product.precautions && (
+                        <p>
+                          <strong className="text-[#183F32]">Precautions:</strong>{' '}
+                          {product.precautions}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Official Statutory Regulatory & Allergy Disclaimer Box */}
+            <div className="mt-6 p-4 rounded-xl bg-amber-50/70 border border-amber-200/80 text-[11px] text-[#26312B]/85 space-y-2">
+              <div className="flex items-center gap-2 font-bold text-amber-950 uppercase tracking-wider text-[10px]">
+                <ShieldCheck className="w-4 h-4 text-amber-800 shrink-0" />
+                <span>Statutory Regulatory & Safety Disclaimer (DRAP / FDA / EMA)</span>
+              </div>
+              <p className="leading-relaxed">
+                <strong>Botanical Notice:</strong> Statements regarding this traditional herbal formulation have not been evaluated by the Drug Regulatory Authority of Pakistan (DRAP), the United States FDA, or European Medicines Agency (EMA). This product is an artisanal natural preparation and is not intended to diagnose, treat, cure, or prevent any medical condition or disease.
+              </p>
+              <p className="leading-relaxed text-[10px] text-[#26312B]/70">
+                <strong>Safety & Patch Test:</strong> For external topical application unless formulated for consumption. Perform a 24-hour patch test on the inner forearm prior to full application. If pregnant, nursing, or taking prescription medication, consult a licensed healthcare practitioner before use.
+              </p>
             </div>
           </div>
         </div>

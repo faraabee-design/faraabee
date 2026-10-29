@@ -821,8 +821,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </div>
             )}
 
+            {/* Statutory Terms & 18+ Age Acknowledgment */}
+            <div className="p-3 bg-stone-100/80 border border-stone-200 rounded-xl text-[10px] text-[#26312B]/75 leading-relaxed space-y-1">
+              <p>
+                {isUrdu
+                  ? 'آرڈر دینے کے ساتھ، آپ تصدیق کرتے ہیں کہ آپ کی عمر 18 سال سے زیادہ ہے اور آپ فارابی کی پالیسی شرائط، ریٹرن پالیسی اور ہربل احتیاطی تدابیر سے متفق ہیں۔ روایتی ہربل پروڈکٹس کسی بیماری کے علاج یا متبادل ادویات کے طور پر نہیں ہیں۔'
+                  : 'By confirming this order, you confirm you are 18+ years of age and agree to FARAABEE Terms & Conditions, Privacy Policy, and Botanical Disclaimers. Handcrafted herbal preparations are traditional wellness supplements not evaluated by DRAP/FDA/EMA and are not intended to cure or prevent diseases.'}
+              </p>
+            </div>
+
             {/* Submit Action */}
-            <div className="pt-2 flex items-center justify-between">
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
               <div className="flex items-center gap-1.5 text-[11px] text-[#26312B]/70">
                 <ShieldCheck className="w-4 h-4 text-[#183F32]" />
                 <span>{isUrdu ? 'فارابی دواخانہ کی خالص امانت و تحفظ' : 'Protected by Farabi Apothecary Care'}</span>

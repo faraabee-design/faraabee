@@ -254,7 +254,7 @@ export const DEFAULT_CONTENT: SiteCopyContent = {
     color: '#AFC7A5',
   },
   footerDisclaimer: {
-    text: 'Disclaimer: Traditional herbal preparations. Statements have not been evaluated by regulatory agencies. Not intended to diagnose, treat, or cure any medical condition.',
+    text: 'Statutory Regulatory Disclaimer: Traditional botanical preparations. Statements made on this website have not been evaluated by DRAP (Pakistan), the US FDA, or the European Medicines Agency (EMA). Products and spiritual counsel are not intended to diagnose, treat, cure, or prevent any physical or mental disease. Always consult a licensed healthcare physician.',
     fontFamily: 'Plus Jakarta Sans',
     fontSize: 'text-[11px]',
     fontWeight: 'font-normal',
